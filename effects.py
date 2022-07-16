@@ -57,16 +57,16 @@ def solarize(image, threshold=128):
     return ImageOps.solarize(image.convert("RGB"), threshold)
     
 def brightness(image, factor=50):
-    return ImageEnhance.Brightness(image).enhance(factor / 100)
+    return ImageEnhance.Brightness(image.convert("RGB")).enhance(factor / 100)
     
 def color(image, factor=50):
-    return ImageEnhance.Color(image).enhance(factor / 100)
+    return ImageEnhance.Color(image.convert("RGB")).enhance(factor / 100)
     
 def contrast(image, factor=50):
-    return ImageEnhance.Contrast(image).enhance(factor / 100)
+    return ImageEnhance.Contrast(image.convert("RGB")).enhance(factor / 100)
     
 def sharpness(image, factor=50):
-    return ImageEnhance.Sharpness(image).enhance(factor / 100)
+    return ImageEnhance.Sharpness(image.convert("RGB")).enhance(factor / 100)
     
 def gaussian_blur(image, radius=2):
     return image.filter(ImageFilter.GaussianBlur(radius))
