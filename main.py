@@ -73,7 +73,9 @@ class App():
         self.root.mainloop()
 
     def undo(self):
+        image = self.current_image
         self.current_image = self.last_image
+        self.last_image = image
         self.resize_image()
         self.render_image()
         
