@@ -9,7 +9,7 @@ class App():
         super().__init__()
         
         self.root = tk.Tk()
-        self.root.title("ImageEdit v1.0")
+        self.root.title("ImageEdit v1.0.1")
         
         self.root.resizable(False, False)
         
@@ -25,7 +25,9 @@ class App():
 
         self.edit_menu = tk.Menu(self.menubar)
         self.edit_menu.add_command(label="Undo", command=self.undo)
+        self.edit_menu.add_separator()
         self.edit_menu.add_command(label="Resize", command=self.resize_menu)
+        self.edit_menu.add_command(label="Crop", command=self.crop_menu)
         self.edit_menu.add_separator()
         self.edit_menu.add_command(label="Stats", command=self.image_stats)
 
@@ -85,27 +87,32 @@ class App():
             self.resize_dimension_2 = int(entry2.get())
         except ValueError:
             if entry1.get() != "" and entry2.get() != "":
-                messagebox.showerror(message="You must enter an integer!", title="Error")
+                messagebox.showerror(message="You must enter an integer in both fields!", title="Error")
                 entry1.set("")
                 entry2.set("")
         else:
             if self.keep_aspect_ratio_var.get() == 1:
                 if entry1 == self.width_sv:
-                    self.modify_percent = self.resize_dimension_1 / self.current_image.width
-                    self.resize_dimension_2 *= self.modify_percent
+                    self.aspect_ratio_modify_percent = self.current_image.width / self.resize_dimension_1 
+                    self.resize_dimension_2 = self.current_image.height / self.aspect_ratio_modify_percent
                     entry2.set(str(round(self.resize_dimension_2)))
                 else:
-                    self.modify_percent = self.resize_dimension_2 / self.current_image.height
-                    self.resize_dimension_1 *= self.modify_percent
+                    self.aspect_ratio_modify_percent = self.current_image.height / self.resize_dimension_2 
+                    self.resize_dimension_1 = self.current_image.width / self.aspect_ratio_modify_percent
                     entry1.set(str(round(self.resize_dimension_1)))
                 
     def resize(self):
         self.current_image = self.current_image.resize((int(self.width_entry.get()), int(self.height_entry.get())))
         
         self.resize_window.destroy()
+        self.resize_window.quit()
         
         self.resize_image()
         self.render_image()
+        
+    def resize_window_quit(self):
+        self.resize_window.destroy()
+        self.resize_window.quit()
 
     def resize_menu(self):
         self.resize_window = tk.Toplevel(self.root)
@@ -114,6 +121,10 @@ class App():
         
         self.width_sv = tk.StringVar()
         self.height_sv = tk.StringVar()
+        
+        self.width_sv.set(self.current_image.width)
+        self.height_sv.set(self.current_image.height)
+        
         self.width_entry = tk.Entry(self.resolution_frame, textvariable=self.width_sv)
         self.height_entry = tk.Entry(self.resolution_frame, textvariable=self.height_sv)
         
@@ -131,7 +142,7 @@ class App():
         self.resize_button_frame = tk.Frame(self.resize_window)
         
         self.resize_ok = tk.Button(self.resize_button_frame, text="OK", command=self.resize)
-        self.resize_cancel = tk.Button(self.resize_button_frame, text="Cancel", command=self.resize_window.destroy)
+        self.resize_cancel = tk.Button(self.resize_button_frame, text="Cancel", command=self.resize_window_quit)
         
         self.resize_label = tk.Label(self.resize_window, text="Enter the new size of the image:")
         self.resize_label.grid(row=0, column=0)
@@ -151,6 +162,72 @@ class App():
         self.resize_button_frame.grid(row=3, column=0)
         
         self.checkbutton_frame.grid(row=2, column=0)
+        
+        self.resize_window.mainloop()
+        
+    def return_selected_point(self):
+        if self.selected_point == None:
+            messagebox.showerror(message="You must select a point first!", title="Error")
+        else:
+            self.select_point_window.destroy()
+            self.select_point_window.quit()
+            
+    def return_no_point(self):
+        self.selected_point = None
+        self.select_point_window.destroy()
+        self.select_point_window.quit()
+    
+    def locate_selected_point(self, event):
+        self.show_image_x_point = self.select_point_image.winfo_pointerx() - self.select_point_image.winfo_rootx()
+        self.show_image_y_point = self.select_point_image.winfo_pointery() - self.select_point_image.winfo_rooty()
+        
+        # this might have some inaccuracies
+        self.current_image_x_point = round(self.show_image_x_point * self.modify_percent)
+        self.current_image_y_point = round(self.show_image_y_point * self.modify_percent)
+        
+        self.selected_point = (self.current_image_x_point, self.current_image_y_point)
+        
+        self.select_point_label.configure(text=f"Point located! The location is: {self.selected_point}")
+        
+    def select_point(self, point_description):
+        self.select_point_window = tk.Toplevel(self.root)
+        
+        self.select_point_label = tk.Label(self.select_point_window, text=f"Select the {point_description} point:")
+        self.select_point_image = tk.Label(self.select_point_window, image=self.show_image)
+        
+        self.select_point_buttons = tk.Frame(self.select_point_window)
+        
+        self.select_point_button_ok = tk.Button(self.select_point_buttons, text="OK", command=self.return_selected_point)
+        self.select_point_button_cancel = tk.Button(self.select_point_buttons, text="Cancel", command=self.return_no_point)
+        
+        self.select_point_button_ok.grid(row=0, column=0)
+        self.select_point_button_cancel.grid(row=0, column=1)
+        
+        self.select_point_label.grid(row=0, column=0)
+        self.select_point_image.grid(row=1, column=0)
+        
+        self.select_point_buttons.grid(row=2, column=0)
+        
+        self.selected_point = None
+        
+        self.select_point_image.bind("<Button-1>", self.locate_selected_point)
+        
+        self.select_point_window.mainloop()
+        
+    def crop_menu(self):
+        self.select_point("top left")
+        self.topleft_point = self.selected_point
+        if self.topleft_point == None:
+            return None
+            
+        self.select_point("bottom right")
+        self.bottomright_point = self.selected_point
+        if self.bottomright_point == None:
+            return None
+        
+        self.current_image = self.current_image.crop((self.topleft_point[0], self.topleft_point[1], self.bottomright_point[0], self.bottomright_point[1]))
+        self.resize_image()
+        self.render_image()
         
     def image_stats(self):
         self.stat = ImageStat.Stat(self.current_image)
@@ -182,8 +259,6 @@ class App():
         self.image_label.config(image=self.show_image)
         
     def resize_image(self):
-        """makes the image fit the boundaries (800x800, sorry 4k users, but I have a 4:3 monitor)."""
-    
         self.original_width = self.current_image.width
         self.original_height = self.current_image.height
         
@@ -202,7 +277,7 @@ class App():
         if self.new_width == 0: self.new_width = 1
         if self.new_height == 0: self.new_height = 1
         
-        # self.current_image = self.current_image.convert("RGBA")
+        self.current_image = self.current_image.convert("RGB")
         
         self.show_image = self.current_image.resize((self.new_width, self.new_height))
         self.show_image = ImageTk.PhotoImage(self.show_image)
