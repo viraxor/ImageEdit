@@ -268,6 +268,10 @@ class App():
             self.modify_percent = self.original_width / 800 # how much times is original larger than
         elif self.original_height > 800:
             self.modify_percent = self.original_height / 800
+        elif self.original_width < 200:
+            self.modify_percent = self.original_width / 200
+        elif self.original_height < 200:
+            self.modify_percent = self.original_height / 200
             
         # division because modify_percent is always 1 or larger
         self.new_width = round(self.original_width / self.modify_percent)
