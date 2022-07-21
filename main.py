@@ -9,7 +9,7 @@ class App():
         super().__init__()
         
         self.root = tk.Tk()
-        self.root.title("ImageEdit v1.1")
+        self.root.title("ImageEdit v1.0.1")
         
         self.root.resizable(False, False)
         
