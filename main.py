@@ -9,7 +9,7 @@ class App():
         super().__init__()
         
         self.root = tk.Tk()
-        self.root.title("ImageEdit v1.0.1")
+        self.root.title("ImageEdit v1.1")
         
         self.root.resizable(False, False)
         
@@ -28,6 +28,7 @@ class App():
         self.edit_menu.add_separator()
         self.edit_menu.add_command(label="Resize", command=self.resize_menu)
         self.edit_menu.add_command(label="Crop", command=self.crop_menu)
+        self.edit_menu.add_command(label="Tile", command=self.tile_menu)
         self.edit_menu.add_separator()
         self.edit_menu.add_command(label="Stats", command=self.image_stats)
 
@@ -228,6 +229,55 @@ class App():
         self.current_image = self.current_image.crop((self.topleft_point[0], self.topleft_point[1], self.bottomright_point[0], self.bottomright_point[1]))
         self.resize_image()
         self.render_image()
+        
+    def tile_window_quit(self):
+        self.tile_window.destroy()
+        self.tile_window.quit()
+        
+    def tile_image(self):
+        try:
+            self.tile_x = int(self.tile_entry_x.get())
+            self.tile_y = int(self.tile_entry_y.get())
+        except ValueError:
+            messagebox.showerror(message="You must enter an integer in both fields!", title="Error")
+            self.tile_entry_x.set("")
+            self.tile_entry_y.set("")
+        else:
+            self.last_image = self.current_image
+            self.current_image = Image.new("RGB", (self.tile_x, self.tile_y))
+            for x in range(self.tile_x // self.last_image.width):
+                for y in range(self.tile_y // self.last_image.height):
+                    self.current_image.paste(self.last_image, (x * self.last_image.width, y * self.last_image.height))
+            self.resize_image()
+            self.render_image()
+            
+            self.tile_window.destroy()
+            self.tile_window.quit()
+        
+    def tile_menu(self):
+        self.tile_window = tk.Toplevel(self.root)
+        
+        self.tile_label_x = tk.Label(self.tile_window, text="X: ")
+        self.tile_entry_x = tk.Entry(self.tile_window)
+        self.tile_label_y = tk.Label(self.tile_window, text="Y: ")
+        self.tile_entry_y = tk.Entry(self.tile_window)
+        
+        self.tile_button_frame = tk.Frame(self.tile_window)
+        
+        self.tile_button_ok = tk.Button(self.tile_button_frame, text="OK", command=self.tile_image)
+        self.tile_button_cancel = tk.Button(self.tile_button_frame, text="Cancel", command=self.tile_window_quit)
+        
+        self.tile_button_ok.grid(row=0, column=0)
+        self.tile_button_cancel.grid(row=0, column=1)
+        
+        self.tile_label_x.grid(row=0, column=0)
+        self.tile_entry_x.grid(row=0, column=1)
+        self.tile_label_y.grid(row=1, column=0)
+        self.tile_entry_y.grid(row=1, column=1)
+        
+        self.tile_button_frame.grid(row=2, column=0)
+        
+        self.tile_window.mainloop()
         
     def image_stats(self):
         self.stat = ImageStat.Stat(self.current_image)
