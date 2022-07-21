@@ -59,8 +59,8 @@ class App():
         self.effects = getmembers(effects, isfunction)
         self.buttons = []
         
-        self.current_image = self.open_image()
-        if self.current_image:
+        self.current_image_dialog_response = self.open_image()
+        if self.current_image_dialog_response:
             self.add_buttons()
         
             self.button_bg_frame.grid(row=1, column=0)
@@ -293,11 +293,11 @@ class App():
         
     def open_image(self):
         Image.MAX_IMAGE_PIXELS = self.max_image_pixels_number
-        self.current_image = filedialog.askopenfilename()
+        self.current_image_dialog = filedialog.askopenfilename()
         
-        if self.current_image:
+        if self.current_image_dialog:
             try:
-                self.current_image = Image.open(self.current_image)
+                self.current_image = Image.open(self.current_image_dialog)
             except FileNotFoundError:
                 messagebox.showerror(title="Error", message="File not found.")
             except UnidentifiedImageError:
@@ -307,12 +307,14 @@ class App():
                     Image.MAX_IMAGE_PIXELS = 0
                     self.current_image = Image.open(self.current_image)
                     messagebox.showwarning(title="Warning", message="The program might be unstable because of the image size. Be aware that the program isn't tested with such gigantic images. If any damage is done to the system, the program is not responsible for it.")
+                    self.last_image = self.current_image
             except Image.DecompressionBombError:
                 messagebox.showerror(title="Decompression Bomb Error", message=f"The image that you're opening has over twice as many pixels than the limit, {Image.MAX_IMAGE_PIXELS}. When opened, this image could cause crashes and disruption in the system by using too much memory.")
             else:
                 self.resize_image()
+                self.last_image = self.current_image
 
-        return self.current_image
+        return self.current_image_dialog
         
     def save_image(self):
         self.save_image = filedialog.asksaveasfilename()
