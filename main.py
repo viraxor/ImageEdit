@@ -11,7 +11,7 @@ class App():
         self.max_image_pixels_number = Image.MAX_IMAGE_PIXELS
         
         self.root = tk.Tk()
-        self.root.title("ImageEdit v1.0.1")
+        self.root.title("ImageEdit v1.0.2")
         
         self.root.resizable(False, False)
         
