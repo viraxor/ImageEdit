@@ -1,4 +1,4 @@
-from PIL import Image, ImageTk, ImageStat
+from PIL import Image, ImageTk, ImageStat, UnidentifiedImageError
 import tkinter as tk
 from tkinter import messagebox, colorchooser, filedialog
 import effects
@@ -7,6 +7,8 @@ from inspect import getmembers, isfunction
 class App():
     def __init__(self):
         super().__init__()
+        
+        self.max_image_pixels_number = Image.MAX_IMAGE_PIXELS
         
         self.root = tk.Tk()
         self.root.title("ImageEdit v1.0.1")
@@ -39,7 +41,7 @@ class App():
         self.image_frame = tk.Frame(self.root, bg="gray38", width=800, height=800)
         self.image_frame.grid(row=0, column=0)
 
-        self.show_image = None
+        self.show_image = ImageTk.PhotoImage(Image.new("RGB", (200, 200)))
 
         self.image_label = tk.Label(self.image_frame, image=self.show_image)
         self.image_label.grid(row=0, column=0, padx=10, pady=10)
@@ -57,21 +59,17 @@ class App():
         self.effects = getmembers(effects, isfunction)
         self.buttons = []
         
-        self.current_image = filedialog.askopenfilename()
+        self.current_image = self.open_image()
         if self.current_image:
-            self.current_image = Image.open(self.current_image)
-            
-        self.resize_image()
+            self.add_buttons()
         
-        self.add_buttons()
+            self.button_bg_frame.grid(row=1, column=0)
+            self.button_canvas.grid(row=0, column=0)
+            self.button_frame.grid(row=0, column=0)
         
-        self.button_bg_frame.grid(row=1, column=0)
-        self.button_canvas.grid(row=0, column=0)
-        self.button_frame.grid(row=0, column=0)
+            self.button_frame.bind("<Configure>", self.scroll)
         
-        self.button_frame.bind("<Configure>", self.scroll)
-        
-        self.button_canvas.create_window((0,0), window=self.button_frame, anchor='nw')
+            self.button_canvas.create_window((0,0), window=self.button_frame, anchor='nw')
         
         self.root.mainloop()
 
@@ -245,8 +243,8 @@ class App():
         else:
             self.last_image = self.current_image
             self.current_image = Image.new("RGB", (self.tile_x, self.tile_y))
-            for x in range(self.tile_x // self.last_image.width):
-                for y in range(self.tile_y // self.last_image.height):
+            for x in range(self.tile_x // self.last_image.width + 1):
+                for y in range(self.tile_y // self.last_image.height + 1):
                     self.current_image.paste(self.last_image, (x * self.last_image.width, y * self.last_image.height))
             self.resize_image()
             self.render_image()
@@ -294,11 +292,27 @@ class App():
         self.button_canvas.configure(scrollregion=self.button_canvas.bbox("all"), width=self.new_width, height=80)
         
     def open_image(self):
+        Image.MAX_IMAGE_PIXELS = self.max_image_pixels_number
         self.current_image = filedialog.askopenfilename()
+        
         if self.current_image:
-            self.current_image = Image.open(self.current_image)
-            
-        self.resize_image()
+            try:
+                self.current_image = Image.open(self.current_image)
+            except FileNotFoundError:
+                messagebox.showerror(title="Error", message="File not found.")
+            except UnidentifiedImageError:
+                messagebox.showerror(title="Error", message="This image is invalid (or the image type isn't supported).")
+            except Image.DecompressionBombWarning:
+                if messagebox.askyesno(title="Decompression Bomb Warning", message=f"The image that you're opening exceeds {Image.MAX_IMAGE_PIXELS} pixels. Are you sure you want to continue?"):
+                    Image.MAX_IMAGE_PIXELS = 0
+                    self.current_image = Image.open(self.current_image)
+                    messagebox.showwarning(title="Warning", message="The program might be unstable because of the image size. Be aware that the program isn't tested with such gigantic images. If any damage is done to the system, the program is not responsible for it.")
+            except Image.DecompressionBombError:
+                messagebox.showerror(title="Decompression Bomb Error", message=f"The image that you're opening has over twice as many pixels than the limit, {Image.MAX_IMAGE_PIXELS}. When opened, this image could cause crashes and disruption in the system by using too much memory.")
+            else:
+                self.resize_image()
+
+        return self.current_image
         
     def save_image(self):
         self.save_image = filedialog.asksaveasfilename()
