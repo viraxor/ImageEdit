@@ -207,7 +207,13 @@ class App():
             with open("./settings.txt", "r") as f:
                 self.settings_list = f.readlines()
         except:
-            messagebox.showwarning(title="Settings error", message="You do not have a settings.txt file. The program will work with default values.")
+            with open("./settings.txt", "w") as f:
+                f.write("800\n800\n200\n200\n80000000")
+            self.resize_image_max_width = 800
+            self.resize_image_max_height = 800
+            self.resize_image_min_width = 200
+            self.resize_image_min_height = 200
+            self.max_image_pixels_number = Image.MAX_IMAGE_PIXELS = 80000000
         else:
             try:
                 self.resize_image_max_width = int(self.settings_list[0])
@@ -232,6 +238,7 @@ class App():
             try:
                 self.max_image_pixels_number = Image.MAX_IMAGE_PIXELS = int(self.settings_list[4])
             except:
+                self.max_image_pixels_number = Image.MAX_IMAGE_PIXELS = 80000000
                 messagebox.showwarning(title="Settings error", message="There's an error with MAX_IMAGE_PIXELS setting. The value passed by PIL.Image will be used.")
                 
     def undo(self):
