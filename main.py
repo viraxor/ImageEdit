@@ -12,6 +12,8 @@ class App():
         
         self.root = tk.Tk()
         self.root.title("ImageEdit v1.0.2")
+
+        self.read_settings()
         
         self.root.resizable(False, False)
         
@@ -32,9 +34,14 @@ class App():
         self.edit_menu.add_command(label="Crop", command=self.crop_menu)
         self.edit_menu.add_command(label="Tile", command=self.tile_menu)
         self.edit_menu.add_separator()
-        self.edit_menu.add_command(label="Stats", command=self.image_stats)
+        self.edit_menu.add_command(label="Settings", command=self.settings_menu)
 
         self.menubar.add_cascade(label="Edit", menu=self.edit_menu)
+        
+        self.view_menu = tk.Menu(self.menubar)
+        self.view_menu.add_command(label="Stats", command=self.image_stats)
+        
+        self.menubar.add_cascade(label="View", menu=self.view_menu)
         
         self.root.config(menu=self.menubar)
         
@@ -60,7 +67,7 @@ class App():
         self.buttons = []
         
         self.current_image_dialog_response = self.open_image()
-        if self.current_image_dialog_response:
+        if self.show_image != Image.new("RGB", (200, 200)):
             self.add_buttons()
         
             self.button_bg_frame.grid(row=1, column=0)
@@ -72,7 +79,161 @@ class App():
             self.button_canvas.create_window((0,0), window=self.button_frame, anchor='nw')
         
         self.root.mainloop()
-
+        
+    def show_image_tab(self):
+        if self.last_tab_frame != None: self.last_tab_frame.grid_forget()
+    
+        self.image_tab_frame = tk.Frame(self.settings_window)
+        
+        self.max_image_pixels_number_frame = tk.Frame(self.image_tab_frame)
+        self.max_image_pixels_number_entry = tk.Entry(self.max_image_pixels_number_frame)
+        self.max_image_pixels_number_entry.insert(0, f"{self.max_image_pixels_number}")
+        self.max_image_pixels_number_label = tk.Label(self.max_image_pixels_number_frame, text="Maximum pixels in an image: ")
+        
+        self.max_image_pixels_number_entry.grid(row=0, column=1)
+        self.max_image_pixels_number_label.grid(row=0, column=0)
+        
+        self.max_image_pixels_number_frame.grid(row=0, column=0)
+        
+        self.image_tab_frame.grid(row=0, column=1)
+        
+        self.last_tab_frame = self.image_tab_frame
+        
+    def show_display_tab(self):
+        if self.last_tab_frame != None: self.last_tab_frame.grid_forget()
+    
+        self.display_tab_frame = tk.Frame(self.settings_window)
+        
+        self.resize_image_max_width_frame = tk.Frame(self.display_tab_frame)
+        self.resize_image_max_width_entry = tk.Entry(self.resize_image_max_width_frame)
+        self.resize_image_max_width_entry.insert(0, f"{self.resize_image_max_width}")
+        self.resize_image_max_width_label = tk.Label(self.resize_image_max_width_frame, text=f"Maximum width when showing image: ")
+        
+        self.resize_image_max_height_frame = tk.Frame(self.display_tab_frame)
+        self.resize_image_max_height_entry = tk.Entry(self.resize_image_max_height_frame)
+        self.resize_image_max_height_entry.insert(0, f"{self.resize_image_max_height}")
+        self.resize_image_max_height_label = tk.Label(self.resize_image_max_height_frame, text=f"Maximum height when showing image: ")
+        
+        self.resize_image_min_width_frame = tk.Frame(self.display_tab_frame)
+        self.resize_image_min_width_entry = tk.Entry(self.resize_image_min_width_frame)
+        self.resize_image_min_width_entry.insert(0, f"{self.resize_image_min_width}")
+        self.resize_image_min_width_label = tk.Label(self.resize_image_min_width_frame, text=f"Minimum width when showing image: ")
+        
+        self.resize_image_min_height_frame = tk.Frame(self.display_tab_frame)
+        self.resize_image_min_height_entry = tk.Entry(self.resize_image_min_height_frame)
+        self.resize_image_min_height_entry.insert(0, f"{self.resize_image_min_height}")
+        self.resize_image_min_height_label = tk.Label(self.resize_image_min_height_frame, text=f"Minimum height when showing image: ")
+        
+        self.resize_image_max_width_entry.grid(row=0, column=1)
+        self.resize_image_max_width_label.grid(row=0, column=0)
+        
+        self.resize_image_max_height_entry.grid(row=0, column=1)
+        self.resize_image_max_height_label.grid(row=0, column=0)
+        
+        self.resize_image_min_width_entry.grid(row=0, column=1)
+        self.resize_image_min_width_label.grid(row=0, column=0)
+        
+        self.resize_image_min_height_entry.grid(row=0, column=1)
+        self.resize_image_min_height_label.grid(row=0, column=0)
+        
+        self.resize_image_max_width_frame.grid(row=0, column=0)
+        self.resize_image_max_height_frame.grid(row=1, column=0)
+        self.resize_image_min_width_frame.grid(row=2, column=0)
+        self.resize_image_min_height_frame.grid(row=3, column=0)
+        
+        self.display_tab_frame.grid(row=0, column=1)
+        
+        self.last_tab_frame = self.display_tab_frame
+        
+    def apply_settings(self):
+        try:
+            self.resize_image_max_width = int(self.resize_image_max_width_entry.get())
+        except:
+            messagebox.showerror(title="Settings error", message="You entered the value for resize_image_max_width incorrectly.")
+        try:
+            self.resize_image_max_height = int(self.resize_image_max_height_entry.get())
+        except:
+            messagebox.showerror(title="Settings error", message="You entered the value for resize_image_max_height incorrectly.")
+        try:
+            self.resize_image_min_width = int(self.resize_image_min_width_entry.get())
+        except:
+            messagebox.showerror(title="Settings error", message="You entered the value for resize_image_min_width incorrectly.")
+        try:
+            self.resize_image_min_height = int(self.resize_image_min_height_entry.get())
+        except:
+            messagebox.showerror(title="Settings error", message="You entered the value for resize_image_min_height incorrectly.")
+        try:
+            self.max_image_pixels_number = Image.MAX_IMAGE_PIXELS = int(self.max_image_pixels_number_entry.get())
+        except:
+            messagebox.showerror(title="Settings error", message="You entered the value for Image.MAX_IMAGE_PIXELS incorrectly.")
+            
+        with open("./settings.txt", "w") as f:
+            f.write(f"{self.resize_image_max_width}\n{self.resize_image_max_height}\n{self.resize_image_min_width}\n{self.resize_image_min_height}\n{self.max_image_pixels_number}")
+        
+    def turn_off_settings(self):
+        self.settings_window.destroy()
+        self.settings_window.quit()
+        
+    def settings_menu(self):
+        self.settings_window = tk.Toplevel(self.root)
+        
+        self.settings_window_tab_frame = tk.Frame(self.settings_window)
+        
+        self.settings_window_image_button = tk.Button(self.settings_window_tab_frame, text="image", width=10, height=5, command=self.show_image_tab)
+        self.settings_window_display_button = tk.Button(self.settings_window_tab_frame, text="display", width=10, height=5, command=self.show_display_tab)
+        
+        self.settings_window_buttons = tk.Frame(self.settings_window)
+        
+        self.settings_window_apply = tk.Button(self.settings_window_buttons, text="Appppppply", command=self.apply_settings)
+        self.settings_window_cancel = tk.Button(self.settings_window_buttons, text="Cancel", command=self.turn_off_settings)
+        
+        self.settings_window_image_button.grid(row=0, column=0)
+        self.settings_window_display_button.grid(row=1, column=0)
+        
+        self.settings_window_apply.grid(row=0, column=0)
+        self.settings_window_cancel.grid(row=0, column=1)
+        
+        self.settings_window_tab_frame.grid(row=0, column=0)
+        self.settings_window_buttons.grid(row=1, column=1)
+        
+        self.last_tab_frame = None
+        
+        self.show_display_tab()
+        
+        self.settings_window.mainloop()
+        
+    def read_settings(self):
+        try:
+            with open("./settings.txt", "r") as f:
+                self.settings_list = f.readlines()
+        except:
+            messagebox.showwarning(title="Settings error", message="You do not have a settings.txt file. The program will work with default values.")
+        else:
+            try:
+                self.resize_image_max_width = int(self.settings_list[0])
+            except:
+                self.resize_image_max_width = 800
+                messagebox.showwarning(title="Settings error", message="There's an error with max_resize_image_width setting. The default value, 800, will be taken for this setting.")
+            try:
+                self.resize_image_max_height = int(self.settings_list[1])
+            except:
+                self.resize_image_max_height = 800
+                messagebox.showwarning(title="Settings error", message="There's an error with max_resize_image_height setting. The default value, 800, will be taken for this setting.")
+            try:
+                self.resize_image_min_width = int(self.settings_list[2])
+            except:
+                self.resize_image_min_width = 200
+                messagebox.showwarning(title="Settings error", message="There's an error with min_resize_image_width setting. The default value, 200, will be taken for this setting.")
+            try:
+                self.resize_image_min_height = int(self.settings_list[3])
+            except:
+                self.resize_image_min_height = 200
+                messagebox.showwarning(title="Settings error", message="There's an error with min_resize_image_height setting. The default value, 200, will be taken for this setting.")
+            try:
+                self.max_image_pixels_number = Image.MAX_IMAGE_PIXELS = int(self.settings_list[4])
+            except:
+                messagebox.showwarning(title="Settings error", message="There's an error with MAX_IMAGE_PIXELS setting. The value passed by PIL.Image will be used.")
+                
     def undo(self):
         image = self.current_image
         self.current_image = self.last_image
@@ -330,14 +491,14 @@ class App():
         
         self.modify_percent = 1 # value * 1 does nothing. it is faster than checking if this value is False and blah blah blah
         # TODO: make the boundaries changeable by user
-        if self.original_width > 800:
-            self.modify_percent = self.original_width / 800 # how much times is original larger than
-        elif self.original_height > 800:
-            self.modify_percent = self.original_height / 800
-        elif self.original_width < 200:
-            self.modify_percent = self.original_width / 200
-        elif self.original_height < 200:
-            self.modify_percent = self.original_height / 200
+        if self.original_width > self.resize_image_max_width:
+            self.modify_percent = self.original_width / self.resize_image_max_width # how much times is original larger than
+        elif self.original_height > self.resize_image_max_height:
+            self.modify_percent = self.original_height / self.resize_image_max_height
+        elif self.original_width < self.resize_image_min_width:
+            self.modify_percent = self.original_width / self.resize_image_min_width
+        elif self.original_height < self.resize_image_min_height:
+            self.modify_percent = self.original_height / self.resize_image_min_height
             
         # division because modify_percent is always 1 or larger
         self.new_width = round(self.original_width / self.modify_percent)
