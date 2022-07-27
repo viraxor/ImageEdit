@@ -2,26 +2,27 @@ from PIL import Image, ImageOps, ImageEnhance, ImageFilter
 
 def _limit(command, param):
     if command == "quantize":
-        if param == "colors":
-            return 256
+        return 256
     elif command == "rotate":
-        if param == "degrees":
-            return 360
+        return 360
     elif command == "autocontrast":
-        if param == "cutoff":
-            return 255
+        return 50
     elif command == "posterize":
-        if param == "bits":
-            return 8
+        return 8
     elif command == "solarize":
-        if param == "threshold":
-            return 255
+        return 255
     elif command == "unsharp_mask":
         if param == "percent":
             return 200
     elif command in ["brightness", "color", "contrast", "sharpness"]:
-        if param == "factor":
-            return 200
+        return 200
+    elif command == "geek":
+        if param == "minus":
+            return 255
+        elif param == "times":
+            return 30
+    elif command == "hue":
+        return 128
 
 def spread(image, distance=50):
     return image.effect_spread(distance)
@@ -73,3 +74,14 @@ def gaussian_blur(image, radius=2):
     
 def unsharp_mask(image, radius=2, percent=150, threshold=3):
     return image.filter(ImageFilter.UnsharpMask(radius, percent, threshold))
+
+def _run_total_rgb(x):
+    if x >= 128: x = 255
+    else: x = 0
+    return x
+
+def total_rgb(image):
+    return Image.eval(image, _run_total_rgb)
+    
+def geek(image, minus=254, times=15):
+    return Image.eval(image, (lambda x: minus - x * times))
