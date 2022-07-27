@@ -42,6 +42,8 @@ class App():
         self.view_menu = tk.Menu(self.menubar)
         self.view_menu.add_command(label="Stats", command=self.image_stats)
         self.view_menu.add_command(label="ImageEdit Macro Creator", command=macrocreator.execute)
+        self.view_menu.add_separator()
+        self.view_menu.add_command(label="Reload buttons", command=self.reload_buttons)
         
         self.menubar.add_cascade(label="View", menu=self.view_menu)
         
@@ -50,9 +52,10 @@ class App():
         self.image_frame = tk.Frame(self.root, bg="gray38", width=800, height=800)
         self.image_frame.grid(row=0, column=0)
 
-        self.show_image = ImageTk.PhotoImage(Image.new("RGB", (200, 200)))
+        self.show_image_default = True
+        self.show_image = Image.new("RGB", (200, 200))
 
-        self.image_label = tk.Label(self.image_frame, image=self.show_image)
+        self.image_label = tk.Label(self.image_frame, image=ImageTk.PhotoImage(self.show_image))
         self.image_label.grid(row=0, column=0, padx=10, pady=10)
         
         self.macros_buttons = [] 
@@ -84,31 +87,40 @@ class App():
         self.macros_button_scrollbar.grid(row=1, column=0)
         
         self.current_image_dialog_response = self.open_image()
-        if self.show_image != Image.new("RGB", (200, 200)):
-            self.add_effects_buttons()
+        if self.show_image_default:
+            self.current_image = self.show_image
+
+            self.resize_image()
+            self.render_image()
         
-            self.effects_button_canvas.grid(row=0, column=0)
-            self.effects_button_frame.grid(row=0, column=0)
+        self.add_effects_buttons()
         
-            self.effects_button_frame.bind("<Configure>", self.scroll)
+        self.effects_button_canvas.grid(row=0, column=0)
+        self.effects_button_frame.grid(row=0, column=0)
         
-            self.effects_button_canvas.create_window((0,0), window=self.effects_button_frame, anchor='nw')
+        self.effects_button_frame.bind("<Configure>", self.scroll)
+        
+        self.effects_button_canvas.create_window((0, 0), window=self.effects_button_frame, anchor='nw')
             
-            self.add_macros_buttons()
+        self.add_macros_buttons()
             
-            self.macros_button_canvas.grid(row=0, column=0)
-            self.macros_button_frame.grid(row=0, column=0)
+        self.macros_button_canvas.grid(row=0, column=0)
+        self.macros_button_frame.grid(row=0, column=0)
         
-            self.macros_button_frame.bind("<Configure>", self.scroll)
+        self.macros_button_frame.bind("<Configure>", self.scroll)
         
-            self.macros_button_canvas.create_window((0,0), window=self.macros_button_frame, anchor='nw')
+        self.macros_button_canvas.create_window((0, 0), window=self.macros_button_frame, anchor='nw')
             
-            self.button_notebook.add(self.effects_button_bg_frame, text="Effects")
-            self.button_notebook.add(self.macros_button_bg_frame, text="Macros")
+        self.button_notebook.add(self.effects_button_bg_frame, text="Effects")
+        self.button_notebook.add(self.macros_button_bg_frame, text="Macros")
             
-            self.button_notebook.grid(row=1, column=0)
+        self.button_notebook.grid(row=1, column=0)
         
         self.root.mainloop()
+        
+    def reload_buttons(self):
+        self.add_effects_buttons()
+        self.add_macros_buttons()
         
     def show_image_tab(self):
         if self.last_tab_frame != None: self.last_tab_frame.grid_forget()
@@ -175,6 +187,25 @@ class App():
         
         self.last_tab_frame = self.display_tab_frame
         
+    def show_other_tab(self):
+        if self.last_tab_frame != None: self.last_tab_frame.grid_forget()
+        
+        self.other_tab_frame = tk.Frame(self.settings_window)
+        
+        self.show_full_image_path_frame = tk.Frame(self.other_tab_frame)
+        self.show_full_image_path_var = tk.IntVar()
+        self.show_full_image_path_checkbutton = tk.Checkbutton(self.show_full_image_path_frame, onvalue=1, offvalue=0, variable=self.show_full_image_path_var)
+        self.show_full_image_path_label = tk.Label(self.show_full_image_path_frame, text="Show full image path")
+        
+        self.show_full_image_path_checkbutton.grid(row=0, column=0)
+        self.show_full_image_path_label.grid(row=0, column=1)
+        
+        self.show_full_image_path_frame.grid(row=0, column=0)
+        
+        self.other_tab_frame.grid(row=0, column=1)
+        
+        self.last_tab_frame = self.other_tab_frame
+        
     def apply_settings(self):
         try:
             self.resize_image_max_width = int(self.resize_image_max_width_entry.get())
@@ -196,9 +227,13 @@ class App():
             self.max_image_pixels_number = Image.MAX_IMAGE_PIXELS = int(self.max_image_pixels_number_entry.get())
         except:
             messagebox.showerror(title="Settings error", message="You entered the value for Image.MAX_IMAGE_PIXELS incorrectly.")
+        self.show_full_image_path = self.show_full_image_path_var.get()
             
         with open("./settings.txt", "w") as f:
-            f.write(f"{self.resize_image_max_width}\n{self.resize_image_max_height}\n{self.resize_image_min_width}\n{self.resize_image_min_height}\n{self.max_image_pixels_number}")
+            f.write(f"{self.resize_image_max_width}\n{self.resize_image_max_height}\n{self.resize_image_min_width}\n{self.resize_image_min_height}\n{self.max_image_pixels_number}\n{self.show_full_image_path}")
+            
+        self.settings_window.destroy()
+        self.settings_window.quit()
         
     def turn_off_settings(self):
         self.settings_window.destroy()
@@ -206,19 +241,22 @@ class App():
         
     def settings_menu(self):
         self.settings_window = tk.Toplevel(self.root)
+        self.settings_window.title("ImageEdit Settings")
         
         self.settings_window_tab_frame = tk.Frame(self.settings_window)
         
         self.settings_window_image_button = tk.Button(self.settings_window_tab_frame, text="image", width=10, height=5, command=self.show_image_tab)
         self.settings_window_display_button = tk.Button(self.settings_window_tab_frame, text="display", width=10, height=5, command=self.show_display_tab)
+        self.settings_window_other_button = tk.Button(self.settings_window_tab_frame, text="other", width=10, height=5, command=self.show_other_tab)
         
         self.settings_window_buttons = tk.Frame(self.settings_window)
         
-        self.settings_window_apply = tk.Button(self.settings_window_buttons, text="Appppppply", command=self.apply_settings)
+        self.settings_window_apply = tk.Button(self.settings_window_buttons, text="Apply", command=self.apply_settings)
         self.settings_window_cancel = tk.Button(self.settings_window_buttons, text="Cancel", command=self.turn_off_settings)
         
         self.settings_window_image_button.grid(row=0, column=0)
         self.settings_window_display_button.grid(row=1, column=0)
+        self.settings_window_other_button.grid(row=2, column=0)
         
         self.settings_window_apply.grid(row=0, column=0)
         self.settings_window_cancel.grid(row=0, column=1)
@@ -228,6 +266,9 @@ class App():
         
         self.last_tab_frame = None
         
+        # loading all entries and tabs
+        self.show_other_tab()
+        self.show_image_tab()
         self.show_display_tab()
         
         self.settings_window.mainloop()
@@ -238,12 +279,13 @@ class App():
                 self.settings_list = f.readlines()
         except:
             with open("./settings.txt", "w") as f:
-                f.write("800\n800\n200\n200\n80000000")
+                f.write("800\n800\n200\n200\n80000000\n0")
             self.resize_image_max_width = 800
             self.resize_image_max_height = 800
             self.resize_image_min_width = 200
             self.resize_image_min_height = 200
             self.max_image_pixels_number = Image.MAX_IMAGE_PIXELS = 80000000
+            self.show_full_image_path = False
         else:
             try:
                 self.resize_image_max_width = int(self.settings_list[0])
@@ -270,7 +312,12 @@ class App():
             except:
                 self.max_image_pixels_number = Image.MAX_IMAGE_PIXELS = 80000000
                 messagebox.showwarning(title="Settings error", message="There's an error with MAX_IMAGE_PIXELS setting. The value passed by PIL.Image will be used.")
-                
+            try:
+                self.show_full_image_path = bool(self.settings_list[5])
+            except:
+                self.show_full_image_path = False
+                messagebox.showwarning(title="Settings error", message="There's an error with show_full_image_path setting. The default value, False, will be used.")
+            
     def undo(self):
         image = self.current_image
         self.current_image = self.last_image
@@ -313,6 +360,7 @@ class App():
 
     def resize_menu(self):
         self.resize_window = tk.Toplevel(self.root)
+        self.resize_window.title(f"Resize Image")
         
         self.resolution_frame = tk.Frame(self.resize_window)
         
@@ -388,6 +436,7 @@ class App():
         
     def select_point(self, point_description):
         self.select_point_window = tk.Toplevel(self.root)
+        self.select_point_window.title(f"Selecting the {point_description} point")
         
         self.select_point_label = tk.Label(self.select_point_window, text=f"Select the {point_description} point:")
         self.select_point_image = tk.Label(self.select_point_window, image=self.show_image)
@@ -452,6 +501,7 @@ class App():
         
     def tile_menu(self):
         self.tile_window = tk.Toplevel(self.root)
+        self.tile_window.title("Tile Image")
         
         self.tile_label_x = tk.Label(self.tile_window, text="X: ")
         self.tile_entry_x = tk.Entry(self.tile_window)
@@ -479,6 +529,7 @@ class App():
         self.stat = ImageStat.Stat(self.current_image)
         
         self.stat_window = tk.Toplevel(self.root)
+        self.stat_window.title("Image Stats")
         self.stat_label = tk.Label(self.stat_window, text=f"Extrema: {self.stat.extrema}\nTotal pixels: {self.stat.count}\nSum of all pixels: {self.stat.sum}\nSquared sum of all pixels: {self.stat.sum2}\nAverage (mean) pixel level: {self.stat.mean}\nMedian pixel level: {self.stat.median}\nRMS: {self.stat.rms}\nVariance: {self.stat.var}\nStandard deviation: {self.stat.stddev}")
         
         self.stat_ok = tk.Button(self.stat_window, text="OK", command=self.stat_window.destroy)
@@ -509,6 +560,11 @@ class App():
             except Image.DecompressionBombError:
                 messagebox.showerror(title="Decompression Bomb Error", message=f"The image that you're opening has over twice as many pixels than the limit, {Image.MAX_IMAGE_PIXELS}. When opened, this image could cause crashes and disruption in the system by using too much memory.")
             else:
+                self.show_image_default = False
+                if self.show_full_image_path:
+                    self.root.title(f"ImageEdit v1.1 - {self.current_image_dialog}")
+                else:
+                    self.root.title(f"ImageEdit v1.1 - {self.current_image_dialog.split('/')[-1]}")
                 self.resize_image()
                 self.last_image = self.current_image
 
