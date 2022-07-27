@@ -1,0 +1,5 @@
+gaussian_blur 35
+total_rgb
+gaussian_blur 35
+solarize 128
+autocontrast 0
