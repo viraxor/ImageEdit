@@ -66,6 +66,13 @@ class App():
         
         self.button_notebook = ttk.Notebook(self.root, height=100)
         
+        self.current_image_dialog_response = self.open_image()
+        if self.show_image_default:
+            self.current_image = self.show_image
+
+            self.resize_image()
+            self.render_image()
+        
         self.effects_button_bg_frame = tk.Frame(self.button_notebook, bg="gray67", width=820, height=220)
         self.effects_button_canvas = tk.Canvas(self.effects_button_bg_frame)
         self.effects_button_frame = tk.Frame(self.effects_button_canvas)
@@ -80,25 +87,18 @@ class App():
         self.macros_button_canvas = tk.Canvas(self.macros_button_bg_frame)
         self.macros_button_frame = tk.Frame(self.macros_button_canvas)
         
-        self.macros_button_scrollbar = tk.Scrollbar(self.macros_button_bg_frame, orient="horizontal", command=self.effects_button_canvas.xview)
+        self.macros_button_scrollbar = tk.Scrollbar(self.macros_button_bg_frame, orient="horizontal", command=self.macros_button_canvas.xview)
         
         self.macros_button_canvas.configure(xscrollcommand=self.macros_button_scrollbar.set)
         
         self.macros_button_scrollbar.grid(row=1, column=0)
-        
-        self.current_image_dialog_response = self.open_image()
-        if self.show_image_default:
-            self.current_image = self.show_image
-
-            self.resize_image()
-            self.render_image()
         
         self.add_effects_buttons()
         
         self.effects_button_canvas.grid(row=0, column=0)
         self.effects_button_frame.grid(row=0, column=0)
         
-        self.effects_button_frame.bind("<Configure>", self.scroll)
+        self.effects_button_frame.bind("<Configure>", self.scroll_effects)
         
         self.effects_button_canvas.create_window((0, 0), window=self.effects_button_frame, anchor='nw')
             
@@ -107,7 +107,7 @@ class App():
         self.macros_button_canvas.grid(row=0, column=0)
         self.macros_button_frame.grid(row=0, column=0)
         
-        self.macros_button_frame.bind("<Configure>", self.scroll)
+        self.macros_button_frame.bind("<Configure>", self.scroll_macros)
         
         self.macros_button_canvas.create_window((0, 0), window=self.macros_button_frame, anchor='nw')
             
@@ -119,6 +119,12 @@ class App():
         self.root.mainloop()
         
     def reload_buttons(self):
+        self.effects_buttons = []
+        self.macros_buttons = []
+        
+        import effects
+        self.macros = glob.glob("./macros/*.iem")
+        
         self.add_effects_buttons()
         self.add_macros_buttons()
         
@@ -537,8 +543,11 @@ class App():
         self.stat_label.grid(row=0, column=0)
         self.stat_ok.grid(row=1, column=0)
         
-    def scroll(self, e):
+    def scroll_effects(self, e):
         self.effects_button_canvas.configure(scrollregion=self.effects_button_canvas.bbox("all"), width=self.new_width, height=80)
+        
+    def scroll_macros(self, e):
+        self.macros_button_canvas.configure(scrollregion=self.macros_button_canvas.bbox("all"), width=self.new_width, height=80)
         
     def open_image(self):
         Image.MAX_IMAGE_PIXELS = self.max_image_pixels_number
@@ -600,6 +609,8 @@ class App():
         # this could happen on very thin images (like 4000px height 1px width), but nobody will edit them...
         if self.new_width == 0: self.new_width = 1
         if self.new_height == 0: self.new_height = 1
+        
+        self.button_notebook.configure(width=self.new_width)
         
         self.current_image = self.current_image.convert("RGB")
         
