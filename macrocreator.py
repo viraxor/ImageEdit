@@ -4,21 +4,11 @@ import effects
 from inspect import getmembers, isfunction
 
 class App():
-    def __init__(self):
+    def __init__(self, root):
         super().__init__()
         
-        self.root = tk.Tk()
-        self.root.title("ImageEdit Macro Creator v1.0")
-        
-        self.menubar = tk.Menu(self.root)
-        
-        self.file_menu = tk.Menu(self.menubar)
-        self.file_menu.add_command(label="Open", command=self.open_macro)
-        self.file_menu.add_command(label="Save", command=self.save_macro)
-        self.file_menu.add_separator()
-        self.file_menu.add_command(label="Exit", command=self.root.quit)
-        
-        self.menubar.add_cascade(label="File", menu=self.file_menu)
+        self.root = tk.Toplevel(root)
+        self.root.title("ImageEdit Macro Creator v1.0.1")
         
         self.last_effect_listbox = 1
         
@@ -34,11 +24,13 @@ class App():
         self.save_macro_button = tk.Button(self.button_frame, text="Save", command=self.save_macro, width=10)
         self.add_macro_button = tk.Button(self.button_frame, text="Add", command=self.add_macro, width=10)
         self.remove_macro_button = tk.Button(self.button_frame, text="Remove", command=self.remove_macro, width=10)
+        self.clear_macro_button = tk.Button(self.button_frame, text="Clear", command=self.clear_macro, width=10)
         
         self.open_macro_button.grid(row=0, column=0)
         self.save_macro_button.grid(row=1, column=0)
         self.add_macro_button.grid(row=2, column=0)
         self.remove_macro_button.grid(row=3, column=0)
+        self.clear_macro_button.grid(row=4, column=0)
         
         self.button_frame.grid(row=0, column=1)
         
@@ -62,10 +54,7 @@ class App():
                 f.close()
                 
                 self.last_effect_listbox = len(self.macro_instructions)
-                i = 1
-                for instr in self.macro_instructions:
-                    self.effects_listbox.insert(i, instr)
-                    i += 1
+                self.effects_listbox.insert(*self.macro_instructions)
     
     def save_macro(self):
         self.save_macro_dialog = filedialog.asksaveasfilename(defaultextension=".iem", filetypes=[("ImageEdit Macro", "*.iem"), ("All Files", "*.*")])
@@ -145,8 +134,11 @@ class App():
         
         self.add_macro_window.mainloop()
         
-def execute():
-    App()
+    def clear_macro(self):
+        self.effects_listbox.delete(0, tk.END)
+        
+def execute(root):
+    App(root)
 
 def do_macro(image, filename):
     with open(f"./macros/{filename}.iem", "r") as f:
