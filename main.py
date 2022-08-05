@@ -621,7 +621,6 @@ class App():
         self.original_height = self.current_image.height
         
         self.modify_percent = 1 # value * 1 does nothing. it is faster than checking if this value is False and blah blah blah
-        # TODO: make the boundaries changeable by user
         if self.original_width > self.resize_image_max_width:
             self.modify_percent = self.original_width / self.resize_image_max_width # how much times is original larger than
         elif self.original_height > self.resize_image_max_height:
@@ -663,7 +662,10 @@ class App():
     def add_macros_buttons(self):
         i = 0
         for name in self.macros:
-            self.macros_buttons.append(tk.Button(self.macros_button_frame, text=name.split("\\")[-1][:-4], command=lambda c=i: self.macros_button_onclick(c), width=10, height=5))
+            if "\\" in name:
+                self.macros_buttons.append(tk.Button(self.macros_button_frame, text=name.split("\\")[-1][:-4], command=lambda c=i: self.macros_button_onclick(c), width=10, height=5))
+            else:
+                self.macros_buttons.append(tk.Button(self.macros_button_frame, text=name.split("/")[-1][:-4], command=lambda c=i: self.macros_button_onclick(c), width=10, height=5))
             i += 1
                 
         button_column = 0
@@ -674,7 +676,10 @@ class App():
     def add_kernels_buttons(self):
         i = 0
         for name in self.kernels:
-            self.kernels_buttons.append(tk.Button(self.kernels_button_frame, text=name.split("\\")[-1][:-4], command=lambda c=i: self.kernels_button_onclick(c), width=10, height=5))
+            if "\\" in name:
+                self.kernels_buttons.append(tk.Button(self.kernels_button_frame, text=name.split("\\")[-1][:-4], command=lambda c=i: self.kernels_button_onclick(c), width=10, height=5))
+            else:
+                self.kernels_buttons.append(tk.Button(self.kernels_button_frame, text=name.split("/")[-1][:-4], command=lambda c=i: self.kernels_button_onclick(c), width=10, height=5))
             i += 1
                 
         button_column = 0
