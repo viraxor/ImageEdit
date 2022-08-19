@@ -10,9 +10,11 @@ class App():
         super().__init__()
         
         self.max_image_pixels_number = Image.MAX_IMAGE_PIXELS
+
+        self.version = "v1.2"
         
         self.root = tk.Tk()
-        self.root.title("ImageEdit v1.2")
+        self.root.title(f"ImageEdit {self.version}")
 
         self.read_settings()
         
@@ -34,6 +36,7 @@ class App():
         self.edit_menu.add_command(label="Resize", command=self.resize_menu)
         self.edit_menu.add_command(label="Crop", command=self.crop_menu)
         self.edit_menu.add_command(label="Tile", command=self.tile_menu)
+        self.edit_menu.add_command(label="Repeat", command=self.repeat_menu)
         self.edit_menu.add_separator()
         self.edit_menu.add_command(label="Settings", command=self.settings_menu)
 
@@ -62,10 +65,17 @@ class App():
         self.macros_buttons = [] 
         self.effects_buttons = []
         self.kernels_buttons = []
+
+        self.sliders = []
+        self.labels = []
         
         self.effects = getmembers(effects, isfunction)
         self.macros = glob.glob("./macros/*.iem")
         self.kernels = glob.glob("./kernels/*.iek")
+
+        self.make_effects_list()
+        self.make_macros_list()
+        self.make_kernels_list()
         
         self.button_notebook = ttk.Notebook(self.root, height=100)
         
@@ -140,6 +150,135 @@ class App():
         self.button_notebook.grid(row=1, column=0)
         
         self.root.mainloop()
+
+    def make_effects_list(self):
+        self.effects_list = []
+        for name, value in self.effects:
+            if not name.startswith("_"): # __init__, _limit, etc
+                self.effects_list.append(name)
+
+    def make_macros_list(self):
+        self.macros_list = []
+        for name in self.macros:
+            if "\\" in name:
+                self.macros_list.append(name.split("\\")[-1][:-4])
+            else:
+                self.macros_list.append(name.split("/")[-1][:-4])
+
+        self.macros_list = sorted(self.macros_list) # too lazy to implement sorting
+
+    def make_kernels_list(self):
+        self.kernels_list = []
+        for name in self.kernels:
+            if "\\" in name:
+                self.kernels_list.append(name.split("\\")[-1][:-4])
+            else:
+                self.kernels_list.append(name.split("/")[-1][:-4])
+
+        self.kernels_list = sorted(self.kernels_list) # too lazy to implement sorting
+
+    def repeat_menu_change_list(self, *args):
+        self.choose_repeat_actual.grid_forget()
+        self.choose_repeat_actual = eval(f"self.choose_repeat_{self.choose_repeat_type_var.get()}s_optionmenu") # avoid ifs or something, idk
+        self.choose_repeat_actual.grid(row=0, column=2)
+
+    def repeat_menu_add_options(self, *args):
+        for slider, label in zip(self.sliders, self.labels):
+            slider.grid_forget()
+            label.grid_forget()
+            
+        if self.choose_repeat_type_var.get() == "effect":
+            params = eval(f"effects.{self.choose_repeat_actual_var.get()}").__code__.co_varnames # gets all the parameters (arguments) that the function wants
+
+            self.sliders = []
+            self.labels = []
+            for param in params:
+                if not param.startswith("image"):
+                    self.sliders.append(tk.Scale(self.choose_repeat_options, from_=0, to=effects._limit(self.choose_repeat_actual_var.get(), param), orient="horizontal"))
+                    self.labels.append(tk.Label(self.choose_repeat_options, text=param))
+                
+            slider_row = 1
+            for slider, label in zip(self.sliders, self.labels):
+                label.grid(row=slider_row - 1, column=0)
+                slider.grid(row=slider_row, column=0)
+                slider_row += 2
+
+    def repeat_menu_quit(self):
+        self.current_image = self.last_image
+
+        self.repeat_menu_window.destroy()
+        self.repeat_menu_window.quit()
+
+    def repeat_effect(self):
+        self.last_image = self.current_image
+
+        if self.choose_repeat_type_var.get() == "effect":
+            for i in range(self.choose_repeat_times.get()):
+                self.clicked_button_val = eval(f"effects.{self.choose_repeat_actual_var.get()}")
+                self.apply_options()
+        elif self.choose_repeat_type_var.get() == "macro":
+            for i in range(self.choose_repeat_times.get()):
+                self.current_image = macrocreator.do_macro(self.current_image, self.choose_repeat_actual_var.get())
+        elif self.choose_repeat_type_var.get() == "kernel":
+            for i in range(self.choose_repeat_times.get()):
+                self.current_image = kernelcreator.do_kernel(self.current_image, self.choose_repeat_actual_var.get())
+
+        self.resize_image()
+        self.render_image()
+
+        self.repeat_menu_window.destroy()
+        self.repeat_menu_window.quit()
+
+    def repeat_menu(self):
+        self.repeat_menu_window = tk.Toplevel(self.root)
+        self.repeat_menu_window.title("Repeat...")
+
+        self.choose_repeat_frame = tk.Frame(self.repeat_menu_window)
+
+        self.choose_repeat_label = tk.Label(self.choose_repeat_frame, text="Repeat")
+
+        self.choose_repeat_type_var = tk.StringVar()
+        self.choose_repeat_type = tk.OptionMenu(self.choose_repeat_frame, self.choose_repeat_type_var, *["effect", "macro", "kernel"]) # type of stuff to repeat
+
+        self.choose_repeat_type_var.trace("w", self.repeat_menu_change_list)
+
+        self.choose_repeat_actual_var = tk.StringVar()
+
+        self.choose_repeat_effects_optionmenu = tk.OptionMenu(self.choose_repeat_frame, self.choose_repeat_actual_var, *self.effects_list)
+        self.choose_repeat_macros_optionmenu = tk.OptionMenu(self.choose_repeat_frame, self.choose_repeat_actual_var, *self.macros_list)
+        self.choose_repeat_kernels_optionmenu = tk.OptionMenu(self.choose_repeat_frame, self.choose_repeat_actual_var, *self.kernels_list)
+
+        self.choose_repeat_actual = self.choose_repeat_effects_optionmenu
+
+        self.choose_repeat_actual_var.trace("w", self.repeat_menu_add_options)
+
+        self.choose_repeat_label.grid(row=0, column=0)
+        self.choose_repeat_type.grid(row=0, column=1)
+        self.choose_repeat_actual.grid(row=0, column=2)
+
+        self.choose_repeat_options = tk.Frame(self.repeat_menu_window) # used for effect options, that's why is it empty
+        self.choose_repeat_options.grid(row=2, column=0)
+
+        self.choose_repeat_times_frame = tk.Frame(self.repeat_menu_window)
+        self.choose_repeat_times_label = tk.Label(self.choose_repeat_times_frame, text="How much times?")
+        self.choose_repeat_times = tk.Scale(self.choose_repeat_times_frame, from_=0, to=100, orient="horizontal")
+
+        self.choose_repeat_times_label.grid(row=0, column=0)
+        self.choose_repeat_times.grid(row=1, column=0)
+
+        self.choose_repeat_button_frame = tk.Frame(self.repeat_menu_window)
+
+        self.choose_repeat_ok = tk.Button(self.choose_repeat_button_frame, text="OK", command=self.repeat_effect)
+        self.choose_repeat_cancel = tk.Button(self.choose_repeat_button_frame, text="Cancel", command=self.repeat_menu_quit)
+
+        self.choose_repeat_ok.grid(row=0, column=0)
+        self.choose_repeat_cancel.grid(row=0, column=1)
+
+        self.choose_repeat_frame.grid(row=0, column=0)
+        self.choose_repeat_times_frame.grid(row=1, column=0)
+        self.choose_repeat_button_frame.grid(row=3, column=0)
+
+        self.repeat_menu_window.mainloop()
         
     def reload_buttons(self):
         self.effects_buttons = []
@@ -600,9 +739,9 @@ class App():
             else:
                 self.show_image_default = False
                 if self.show_full_image_path:
-                    self.root.title(f"ImageEdit v1.1 - {self.current_image_dialog}")
+                    self.root.title(f"ImageEdit {self.version} - {self.current_image_dialog}")
                 else:
-                    self.root.title(f"ImageEdit v1.1 - {self.current_image_dialog.split('/')[-1]}")
+                    self.root.title(f"ImageEdit {self.version} - {self.current_image_dialog.split('/')[-1]}")
                 self.resize_image()
                 self.last_image = self.current_image
 
@@ -649,8 +788,8 @@ class App():
         
     def add_effects_buttons(self):
         i = 0
-        for name, value in self.effects:
-            if not name.startswith("_"): # __init__, _limit, etc
+        for name, value in self.effects: # don't do effects_list here, because no value
+            if not name.startswith("_"):
                 self.effects_buttons.append(tk.Button(self.effects_button_frame, text=name, command=lambda c=i: self.effects_button_onclick(c), width=10, height=5))
                 i += 1
                 
@@ -661,11 +800,8 @@ class App():
             
     def add_macros_buttons(self):
         i = 0
-        for name in self.macros:
-            if "\\" in name:
-                self.macros_buttons.append(tk.Button(self.macros_button_frame, text=name.split("\\")[-1][:-4], command=lambda c=i: self.macros_button_onclick(c), width=10, height=5))
-            else:
-                self.macros_buttons.append(tk.Button(self.macros_button_frame, text=name.split("/")[-1][:-4], command=lambda c=i: self.macros_button_onclick(c), width=10, height=5))
+        for name in self.macros_list:
+            self.macros_buttons.append(tk.Button(self.macros_button_frame, text=name, command=lambda c=i: self.macros_button_onclick(c), width=10, height=5))
             i += 1
                 
         button_column = 0
@@ -675,11 +811,8 @@ class App():
 
     def add_kernels_buttons(self):
         i = 0
-        for name in self.kernels:
-            if "\\" in name:
-                self.kernels_buttons.append(tk.Button(self.kernels_button_frame, text=name.split("\\")[-1][:-4], command=lambda c=i: self.kernels_button_onclick(c), width=10, height=5))
-            else:
-                self.kernels_buttons.append(tk.Button(self.kernels_button_frame, text=name.split("/")[-1][:-4], command=lambda c=i: self.kernels_button_onclick(c), width=10, height=5))
+        for name in self.kernels_list:
+            self.kernels_buttons.append(tk.Button(self.kernels_button_frame, text=name, command=lambda c=i: self.kernels_button_onclick(c), width=10, height=5))
             i += 1
                 
         button_column = 0
