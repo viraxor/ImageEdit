@@ -1,7 +1,9 @@
 from PIL import Image, ImageOps, ImageEnhance, ImageFilter
 
 def _limit(command, param):
-    if command == "quantize":
+    if param == "fade":
+        return 100
+    elif command == "quantize":
         return 256
     elif command == "rotate":
         return 360
@@ -24,64 +26,64 @@ def _limit(command, param):
     elif command == "hue":
         return 128
 
-def spread(image, distance=50):
-    return image.effect_spread(distance)
+def spread(image, distance=50, fade=100):
+    return Image.blend(image, image.effect_spread(distance), fade / 100)
     
-def quantize(image, colors=128):
-    return image.convert("RGB").quantize(colors)
+def quantize(image, colors=128, fade=100):
+    return Image.blend(image, image.quantize(colors).convert("RGB"), fade / 100)
     
-def rotate(image, degrees=45):
-    return image.rotate(degrees)
+def rotate(image, degrees=45, fade=100):
+    return Image.blend(image, image.rotate(degrees), fade / 100)
     
-def autocontrast(image, cutoff=0):
-    return ImageOps.autocontrast(image.convert("RGB"), cutoff)
+def autocontrast(image, cutoff=0, fade=100):
+    return Image.blend(image, ImageOps.autocontrast(image, cutoff), fade / 100)
     
-def equalize(image):
-    return ImageOps.equalize(image.convert("RGB"))
+def equalize(image, fade=100):
+    return Image.blend(image, ImageOps.equalize(image), fade / 100)
     
-def flip(image):
-    return ImageOps.flip(image)
+def flip(image, fade=100):
+    return Image.blend(image, ImageOps.flip(image), fade / 100)
     
-def grayscale(image):
-    return ImageOps.grayscale(image.convert("RGB"))
+def grayscale(image, fade=100):
+    return Image.blend(image, ImageOps.grayscale(image).convert("RGB"), fade / 100)
     
-def invert(image):
-    return ImageOps.invert(image.convert("RGB"))
+def invert(image, fade=100):
+    return Image.blend(image, ImageOps.invert(image), fade / 100)
 
-def mirror(image):
-    return ImageOps.mirror(image)
+def mirror(image, fade=100):
+    return Image.blend(image, ImageOps.mirror(image), fade / 100)
     
-def posterize(image, bits=4):
-    return ImageOps.posterize(image.convert("RGB"), bits)
+def posterize(image, bits=4, fade=100):
+    return Image.blend(image, ImageOps.posterize(image, bits).convert("RGB"), fade / 100)
     
-def solarize(image, threshold=128):
-    return ImageOps.solarize(image.convert("RGB"), threshold)
+def solarize(image, threshold=128, fade=100):
+    return Image.blend(image, ImageOps.solarize(image, threshold), fade / 100)
     
-def brightness(image, factor=50):
-    return ImageEnhance.Brightness(image.convert("RGB")).enhance(factor / 100)
+def brightness(image, factor=50, fade=100):
+    return Image.blend(image, ImageEnhance.Brightness(image).enhance(factor / 100), fade / 100)
     
-def color(image, factor=50):
-    return ImageEnhance.Color(image.convert("RGB")).enhance(factor / 100)
+def color(image, factor=50, fade=100):
+    return Image.blend(image, ImageEnhance.Color(image).enhance(factor / 100), fade / 100)
     
-def contrast(image, factor=50):
-    return ImageEnhance.Contrast(image.convert("RGB")).enhance(factor / 100)
+def contrast(image, factor=50, fade=100):
+    return Image.blend(image, ImageEnhance.Contrast(image).enhance(factor / 100), fade / 100)
     
-def sharpness(image, factor=50):
-    return ImageEnhance.Sharpness(image.convert("RGB")).enhance(factor / 100)
+def sharpness(image, factor=50, fade=100):
+    return Image.blend(image, ImageEnhance.Sharpness(image).enhance(factor / 100), fade / 100)
     
-def gaussian_blur(image, radius=2):
-    return image.filter(ImageFilter.GaussianBlur(radius))
+def gaussian_blur(image, radius=2, fade=100):
+    return Image.blend(image, image.filter(ImageFilter.GaussianBlur(radius)), fade / 100)
     
-def unsharp_mask(image, radius=2, percent=150, threshold=3):
-    return image.filter(ImageFilter.UnsharpMask(radius, percent, threshold))
+def unsharp_mask(image, radius=2, percent=150, threshold=3, fade=100):
+    return Image.blend(image, image.filter(ImageFilter.UnsharpMask(radius, percent, threshold)), fade / 100)
 
 def _run_total_rgb(x):
     if x >= 128: x = 255
     else: x = 0
     return x
 
-def total_rgb(image):
-    return Image.eval(image, _run_total_rgb)
+def total_rgb(image, fade=100):
+    return Image.blend(image, Image.eval(image, _run_total_rgb), fade / 100)
     
-def geek(image, minus=254, times=15):
-    return Image.eval(image, (lambda x: minus - x * times))
+def geek(image, minus=254, times=15, fade=100):
+    return Image.blend(image, Image.eval(image, (lambda x: minus - x * times)), fade / 100)
