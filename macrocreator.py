@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, colorchooser, filedialog
-import effects
+import effects, kernelcreator
 from inspect import getmembers, isfunction
 
 class App():
@@ -8,7 +8,7 @@ class App():
         super().__init__()
         
         self.root = tk.Toplevel(root)
-        self.root.title("ImageEdit Macro Creator v1.0.1")
+        self.root.title("ImageEdit Macro Creator v1.1")
         
         self.last_effect_listbox = 1
         
@@ -41,6 +41,8 @@ class App():
         for name, value in self.effects:
             if not name.startswith("_"): # __init__, _limit, etc
                 self.effects_list.append(name)
+        self.effects_list.append("macro")
+        self.effects_list.append("kernel") # add macro and kernel stuff to fx list
         
     def open_macro(self):
         self.current_macro_dialog = filedialog.askopenfilename(defaultextension=".iem", filetypes=[("ImageEdit Macro", "*.iem"), ("All Files", "*.*")])
@@ -86,27 +88,40 @@ class App():
         
     def sliders_add_macro(self, a, b, c):
         macro_name = self.add_macro_variable.get()
-        params = eval(f"effects.{macro_name}.__code__.co_varnames") # gets all the parameters (arguments) that the function wants
+        if macro_name not in ["kernel", "macro"]:
+            params = eval(f"effects.{macro_name}.__code__.co_varnames") # gets all the parameters (arguments) that the function wants
     
-        self.slider_frame.grid_forget()
+            self.slider_frame.grid_forget()
     
-        self.sliders = []
-        self.labels = []
-        self.slider_frame = tk.Frame(self.add_macro_window)
+            self.sliders = []
+            self.labels = []
+            self.slider_frame = tk.Frame(self.add_macro_window)
         
-        for param in params:
-            if not param.startswith("image"):
-                self.sliders.append(tk.Scale(self.slider_frame, from_=0, to=effects._limit(macro_name, param), orient="horizontal"))
-                self.labels.append(tk.Label(self.slider_frame, text=param))
+            for param in params:
+                if not param.startswith("image"):
+                    self.sliders.append(tk.Scale(self.slider_frame, from_=0, to=effects._limit(macro_name, param), orient="horizontal"))
+                    self.labels.append(tk.Label(self.slider_frame, text=param))
                 
-        slider_row = 1
-        for slider, label in zip(self.sliders, self.labels):
-            label.grid(row=slider_row - 1, column=0)
-            slider.grid(row=slider_row, column=0)
-            slider_row += 2
-            
+            slider_row = 1
+            for slider, label in zip(self.sliders, self.labels):
+                label.grid(row=slider_row - 1, column=0)
+                slider.grid(row=slider_row, column=0)
+                slider_row += 2
+        else:
+            self.slider_frame.grid_forget()
+
+            self.sliders = []
+            self.labels = []
+            self.slider_frame = tk.Frame(self.add_macro_window)
+
+            self.sliders.append(tk.Entry(self.slider_frame)) # I am using the sliders list for this because add_macro_to_listbox works only with the sliders list.
+            self.sliders[0].grid(row=1, column=0)
+
+            label = tk.Label(self.slider_frame, text=f"Enter {macro_name} filename (do not include extension):")
+            label.grid(row=0, column=0)
+
         self.slider_frame.grid(row=2, column=0)
-        
+
     def add_macro(self):
         self.add_macro_window = tk.Toplevel()
         
@@ -146,9 +161,14 @@ def do_macro(image, filename):
         
     for instr in instructions:
         if " " in instr:
-            image_perform = f"effects.{instr.split(' ')[0]}"
-            image_perform_args = [int(x) for x in instr.split(" ")[1:]]
-            image = eval(f"effects.{instr.split(' ')[0]}")(image, *image_perform_args)
+            if instr.startswith("macro"):
+                image = do_macro(image, instr[6:].strip("\n"))
+            elif instr.startswith("kernel"):
+                image = kernelcreator.do_kernel(image, instr[7:].strip("\n"))
+            else:
+                image_perform = f"effects.{instr.split(' ')[0]}"
+                image_perform_args = [int(x) for x in instr.split(" ")[1:]]
+                image = eval(f"effects.{instr.split(' ')[0]}")(image, *image_perform_args)
         else:
             image = eval(f"effects.{instr}")(image)
     return image
