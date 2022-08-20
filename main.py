@@ -11,7 +11,7 @@ class App():
         
         self.max_image_pixels_number = Image.MAX_IMAGE_PIXELS
 
-        self.version = "v1.2"
+        self.version = "v1.2.1"
         
         self.root = tk.Tk()
         self.root.title(f"ImageEdit {self.version}")
@@ -152,6 +152,8 @@ class App():
         self.root.mainloop()
 
     def make_effects_list(self):
+        self.effects = getmembers(effects, isfunction)
+
         self.effects_list = []
         for name, value in self.effects:
             if not name.startswith("_"): # __init__, _limit, etc
@@ -288,6 +290,10 @@ class App():
         import effects
         self.macros = glob.glob("./macros/*.iem")
         self.kernels = glob.glob("./kernels/*.iek")
+
+        self.make_effects_list()
+        self.make_macros_list()
+        self.make_kernels_list()
         
         self.add_effects_buttons()
         self.add_macros_buttons()
@@ -848,10 +854,21 @@ class App():
         self.macros_clicked_button = self.macros_buttons[number]
         
         self.last_image = self.current_image
+
+        self.macro_wait_window = tk.Toplevel(self.root)
+        self.macro_wait_window.title("The macro is processing the image")
+
+        self.macro_wait_label = tk.Label(self.macro_wait_window, text="Wait a bit...")
+        self.macro_wait_label.grid(row=0, column=0, padx=50, pady=50)
+
+        self.macro_wait_window.update() # if you do lots of macros, this could potentially cause issues (?)
+
         self.current_image = macrocreator.do_macro(self.current_image, self.macros_clicked_button["text"])
         
         self.resize_image()
         self.render_image()
+
+        self.macro_wait_window.destroy()
         
     def kernels_button_onclick(self, number):
         self.kernels_clicked_button = self.kernels_buttons[number]
