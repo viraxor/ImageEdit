@@ -1,7 +1,7 @@
 from PIL import Image, ImageTk, ImageStat, UnidentifiedImageError
 import tkinter as tk
 from tkinter import messagebox, colorchooser, filedialog, ttk
-import effects, macrocreator, kernelcreator
+import effects, generators, macrocreator, kernelcreator
 from inspect import getmembers, isfunction
 import glob
 
@@ -61,19 +61,12 @@ class App():
 
         self.image_label = tk.Label(self.image_frame, image=ImageTk.PhotoImage(self.show_image))
         self.image_label.grid(row=0, column=0, padx=10, pady=10)
-        
-        self.macros_buttons = [] 
-        self.effects_buttons = []
-        self.kernels_buttons = []
 
         self.sliders = []
         self.labels = []
         
-        self.effects = getmembers(effects, isfunction)
-        self.macros = glob.glob("./macros/*.iem")
-        self.kernels = glob.glob("./kernels/*.iek")
-
         self.make_effects_list()
+        self.make_generators_list()
         self.make_macros_list()
         self.make_kernels_list()
         
@@ -95,6 +88,16 @@ class App():
         self.effects_button_canvas.configure(xscrollcommand=self.effects_button_scrollbar.set)
         
         self.effects_button_scrollbar.grid(row=1, column=0)
+
+        self.generators_button_bg_frame = tk.Frame(self.button_notebook, bg="gray67", width=820, height=220)
+        self.generators_button_canvas = tk.Canvas(self.generators_button_bg_frame)
+        self.generators_button_frame = tk.Frame(self.generators_button_canvas)
+        
+        self.generators_button_scrollbar = tk.Scrollbar(self.generators_button_bg_frame, orient="horizontal", command=self.generators_button_canvas.xview)
+        
+        self.generators_button_canvas.configure(xscrollcommand=self.generators_button_scrollbar.set)
+        
+        self.generators_button_scrollbar.grid(row=1, column=0)
         
         self.macros_button_bg_frame = tk.Frame(self.button_notebook, bg="gray67", width=820, height=220)
         self.macros_button_canvas = tk.Canvas(self.macros_button_bg_frame)
@@ -124,6 +127,15 @@ class App():
         self.effects_button_frame.bind("<Configure>", self.scroll_effects)
         
         self.effects_button_canvas.create_window((0, 0), window=self.effects_button_frame, anchor='nw')
+
+        self.add_generators_buttons()
+
+        self.generators_button_canvas.grid(row=0, column=0)
+        self.generators_button_frame.grid(row=0, column=0)
+
+        self.generators_button_frame.bind("<Configure>", self.scroll_generators)
+
+        self.generators_button_canvas.create_window((0, 0), window=self.generators_button_frame, anchor='nw')
             
         self.add_macros_buttons()
             
@@ -144,14 +156,22 @@ class App():
         self.kernels_button_canvas.create_window((0, 0), window=self.kernels_button_frame, anchor='nw')
             
         self.button_notebook.add(self.effects_button_bg_frame, text="Effects")
+        self.button_notebook.add(self.generators_button_bg_frame, text="Generators")
         self.button_notebook.add(self.macros_button_bg_frame, text="Macros")
         self.button_notebook.add(self.kernels_button_bg_frame, text="Kernels")
-            
+                    
         self.button_notebook.grid(row=1, column=0)
+
+        self.button_notebook.bind("<<NotebookTabChanged>>", self.reset_all_buttons)
         
         self.root.mainloop()
 
+    def reset_all_buttons(self, e):
+        self.reset_effects_buttons()
+        self.reset_generators_buttons()
+
     def make_effects_list(self):
+        import effects
         self.effects = getmembers(effects, isfunction)
 
         self.effects_list = []
@@ -159,7 +179,18 @@ class App():
             if not name.startswith("_"): # __init__, _limit, etc
                 self.effects_list.append(name)
 
+    def make_generators_list(self):
+        import generators
+        self.generators = getmembers(generators, isfunction)
+
+        self.generators_list = []
+        for name, value in self.generators:
+            if not name.startswith("_"): # __init__, _limit, etc
+                self.generators_list.append(name)
+
     def make_macros_list(self):
+        self.macros = glob.glob("./macros/*.iem")
+
         self.macros_list = []
         for name in self.macros:
             if "\\" in name:
@@ -170,6 +201,8 @@ class App():
         self.macros_list = sorted(self.macros_list) # too lazy to implement sorting
 
     def make_kernels_list(self):
+        self.kernels = glob.glob("./kernels/*.iek")
+
         self.kernels_list = []
         for name in self.kernels:
             if "\\" in name:
@@ -283,19 +316,13 @@ class App():
         self.repeat_menu_window.mainloop()
         
     def reload_buttons(self):
-        self.effects_buttons = []
-        self.macros_buttons = []
-        self.kernels_buttons = []
-        
-        import effects
-        self.macros = glob.glob("./macros/*.iem")
-        self.kernels = glob.glob("./kernels/*.iek")
-
         self.make_effects_list()
+        self.make_generators_list()
         self.make_macros_list()
         self.make_kernels_list()
         
         self.add_effects_buttons()
+        self.add_generators_buttons()
         self.add_macros_buttons()
         self.add_kernels_buttons()
         
@@ -716,6 +743,9 @@ class App():
         
     def scroll_effects(self, e):
         self.effects_button_canvas.configure(scrollregion=self.effects_button_canvas.bbox("all"), width=self.new_width, height=80)
+
+    def scroll_generators(self, e):
+        self.generators_button_canvas.configure(scrollregion=self.generators_button_canvas.bbox("all"), width=self.new_width, height=80)
         
     def scroll_macros(self, e):
         self.macros_button_canvas.configure(scrollregion=self.macros_button_canvas.bbox("all"), width=self.new_width, height=80)
@@ -744,10 +774,9 @@ class App():
                 messagebox.showerror(title="Decompression Bomb Error", message=f"The image that you're opening has over twice as many pixels than the limit, {Image.MAX_IMAGE_PIXELS}. When opened, this image could cause crashes and disruption in the system by using too much memory.")
             else:
                 self.show_image_default = False
-                if self.show_full_image_path:
-                    self.root.title(f"ImageEdit {self.version} - {self.current_image_dialog}")
-                else:
-                    self.root.title(f"ImageEdit {self.version} - {self.current_image_dialog.split('/')[-1]}")
+                if not self.show_full_image_path:
+                    self.current_image_dialog = self.current_image_dialog.split("\\")[-1] if "\\" in self.current_image_dialog else self.current_image_dialog.split("/")[-1]
+                self.root.title(f"ImageEdit {self.version} - {self.current_image_dialog}")
                 self.resize_image()
                 self.last_image = self.current_image
 
@@ -793,6 +822,8 @@ class App():
         self.render_image()
         
     def add_effects_buttons(self):
+        self.effects_buttons = []
+
         i = 0
         for name, value in self.effects: # don't do effects_list here, because no value
             if not name.startswith("_"):
@@ -803,8 +834,24 @@ class App():
         for button in self.effects_buttons:
             button.grid(row=0, column=button_column)
             button_column += 1
+
+    def add_generators_buttons(self):
+        self.generators_buttons = []
+
+        i = 0
+        for name, value in self.generators: # don't do generators_list here, because no value
+            if not name.startswith("_"):
+                self.generators_buttons.append(tk.Button(self.generators_button_frame, text=name, command=lambda c=i: self.generators_button_onclick(c), width=10, height=5))
+                i += 1
+                
+        button_column = 0
+        for button in self.generators_buttons:
+            button.grid(row=0, column=button_column)
+            button_column += 1
             
     def add_macros_buttons(self):
+        self.macros_buttons = []
+
         i = 0
         for name in self.macros_list:
             self.macros_buttons.append(tk.Button(self.macros_button_frame, text=name, command=lambda c=i: self.macros_button_onclick(c), width=10, height=5))
@@ -816,6 +863,8 @@ class App():
             button_column += 1
 
     def add_kernels_buttons(self):
+        self.kernels_buttons = []
+
         i = 0
         for name in self.kernels_list:
             self.kernels_buttons.append(tk.Button(self.kernels_button_frame, text=name, command=lambda c=i: self.kernels_button_onclick(c), width=10, height=5))
@@ -826,11 +875,18 @@ class App():
             button.grid(row=0, column=button_column)
             button_column += 1
  
-    def reset_buttons(self):
+    def reset_effects_buttons(self):
         i = 0
         for name, value in self.effects:
             if not name.startswith("_"): # __init__, _limit, etc
                 self.effects_buttons[i].configure(text=name, command=lambda c=i: self.effects_button_onclick(c))
+                i += 1
+
+    def reset_generators_buttons(self):
+        i = 0
+        for name, value in self.generators:
+            if not name.startswith("_"): # __init__, _limit, etc
+                self.generators_buttons[i].configure(text=name, command=lambda c=i: self.generators_button_onclick(c))
                 i += 1
             
     def effects_button_onclick(self, number):
@@ -845,10 +901,25 @@ class App():
         self.resize_image()
         self.render_image()
                 
-        self.reset_buttons()
+        self.reset_effects_buttons()
 
-        if len(self.clicked_button_val.__code__.co_varnames) != 1:
-            self.effects_clicked_button.configure(text="options", command=self.button_options)
+        self.effects_clicked_button.configure(text="options", command=self.button_options)
+
+    def generators_button_onclick(self, number):
+        self.generators_clicked_button = self.generators_buttons[number]
+                
+        self.clicked_button_text = self.generators_clicked_button["text"]
+        self.clicked_button_val = eval(f"generators.{self.clicked_button_text}")
+        
+        self.last_image = self.current_image
+        self.current_image = self.clicked_button_val(self.current_image)
+
+        self.resize_image()
+        self.render_image()
+                
+        self.reset_generators_buttons()
+
+        self.generators_clicked_button.configure(text="options", command=self.button_options)
             
     def macros_button_onclick(self, number):
         self.macros_clicked_button = self.macros_buttons[number]
