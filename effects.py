@@ -87,3 +87,8 @@ def total_rgb(image, fade=100):
     
 def geek(image, minus=254, times=15, fade=100):
     return Image.blend(image, Image.eval(image, (lambda x: minus - x * times)), fade / 100)
+
+def channel_drop(image, red=100, green=100, blue=100, fade=100):
+    return Image.blend(image, image.convert("RGB", (red / 100, 0, 0, 0, 
+        0, green / 100, 0, 0, 
+        0, 0, blue / 100, 0)), fade / 100)
