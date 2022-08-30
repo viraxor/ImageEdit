@@ -11,7 +11,7 @@ class App():
         
         self.max_image_pixels_number = Image.MAX_IMAGE_PIXELS
 
-        self.version = "v1.2.1"
+        self.version = "v1.2.2"
         
         self.root = tk.Tk()
         self.root.title(f"ImageEdit {self.version}")
@@ -53,7 +53,7 @@ class App():
         
         self.root.config(menu=self.menubar)
         
-        self.image_frame = tk.Frame(self.root, bg="gray38", width=800, height=800)
+        self.image_frame = tk.Frame(self.root, bg="gray38")
         self.image_frame.grid(row=0, column=0)
 
         self.show_image_default = True
@@ -64,6 +64,9 @@ class App():
 
         self.sliders = []
         self.labels = []
+
+        self.window_width = None
+        self.window_height = None
         
         self.make_effects_list()
         self.make_generators_list()
@@ -79,7 +82,7 @@ class App():
             self.resize_image()
             self.render_image()
         
-        self.effects_button_bg_frame = tk.Frame(self.button_notebook, bg="gray67", width=820, height=220)
+        self.effects_button_bg_frame = tk.Frame(self.button_notebook, bg="gray67")
         self.effects_button_canvas = tk.Canvas(self.effects_button_bg_frame)
         self.effects_button_frame = tk.Frame(self.effects_button_canvas)
         
@@ -89,7 +92,7 @@ class App():
         
         self.effects_button_scrollbar.grid(row=1, column=0)
 
-        self.generators_button_bg_frame = tk.Frame(self.button_notebook, bg="gray67", width=820, height=220)
+        self.generators_button_bg_frame = tk.Frame(self.button_notebook, bg="gray67")
         self.generators_button_canvas = tk.Canvas(self.generators_button_bg_frame)
         self.generators_button_frame = tk.Frame(self.generators_button_canvas)
         
@@ -99,7 +102,7 @@ class App():
         
         self.generators_button_scrollbar.grid(row=1, column=0)
         
-        self.macros_button_bg_frame = tk.Frame(self.button_notebook, bg="gray67", width=820, height=220)
+        self.macros_button_bg_frame = tk.Frame(self.button_notebook, bg="gray67")
         self.macros_button_canvas = tk.Canvas(self.macros_button_bg_frame)
         self.macros_button_frame = tk.Frame(self.macros_button_canvas)
         
@@ -109,7 +112,7 @@ class App():
         
         self.macros_button_scrollbar.grid(row=1, column=0)
         
-        self.kernels_button_bg_frame = tk.Frame(self.button_notebook, bg="gray67", width=820, height=220)
+        self.kernels_button_bg_frame = tk.Frame(self.button_notebook, bg="gray67")
         self.kernels_button_canvas = tk.Canvas(self.kernels_button_bg_frame)
         self.kernels_button_frame = tk.Frame(self.kernels_button_canvas)
         
@@ -237,6 +240,16 @@ class App():
                 label.grid(row=slider_row - 1, column=0)
                 slider.grid(row=slider_row, column=0)
                 slider_row += 2
+        elif self.choose_repeat_type_var.get() == "generator":
+            params = eval(f"generators.{self.choose_repeat_actual_var.get()}").__code__.co_varnames # gets all the parameters (arguments) that the function wants
+
+            self.sliders = []
+            self.labels = []
+            for param in params:
+                if not param.startswith("image"):
+                    self.sliders.append(tk.Scale(self.choose_repeat_options, from_=0, to=generators._limit(self.choose_repeat_actual_var.get(), param), orient="horizontal"))
+                    self.labels.append(tk.Label(self.choose_repeat_options, text=param))
+
 
     def repeat_menu_quit(self):
         self.current_image = self.last_image
@@ -250,6 +263,10 @@ class App():
         if self.choose_repeat_type_var.get() == "effect":
             for i in range(self.choose_repeat_times.get()):
                 self.clicked_button_val = eval(f"effects.{self.choose_repeat_actual_var.get()}")
+                self.apply_options()
+        if self.choose_repeat_type_var.get() == "generator":
+            for i in range(self.choose_repeat_times.get()):
+                self.clicked_button_val = eval(f"generators.{self.choose_repeat_actual_var.get()}")
                 self.apply_options()
         elif self.choose_repeat_type_var.get() == "macro":
             for i in range(self.choose_repeat_times.get()):
@@ -273,13 +290,14 @@ class App():
         self.choose_repeat_label = tk.Label(self.choose_repeat_frame, text="Repeat")
 
         self.choose_repeat_type_var = tk.StringVar()
-        self.choose_repeat_type = tk.OptionMenu(self.choose_repeat_frame, self.choose_repeat_type_var, *["effect", "macro", "kernel"]) # type of stuff to repeat
+        self.choose_repeat_type = tk.OptionMenu(self.choose_repeat_frame, self.choose_repeat_type_var, *["effect", "generator", "macro", "kernel"]) # type of stuff to repeat
 
         self.choose_repeat_type_var.trace("w", self.repeat_menu_change_list)
 
         self.choose_repeat_actual_var = tk.StringVar()
 
         self.choose_repeat_effects_optionmenu = tk.OptionMenu(self.choose_repeat_frame, self.choose_repeat_actual_var, *self.effects_list)
+        self.choose_repeat_generators_optionmenu = tk.OptionMenu(self.choose_repeat_frame, self.choose_repeat_actual_var, *self.generators_list)
         self.choose_repeat_macros_optionmenu = tk.OptionMenu(self.choose_repeat_frame, self.choose_repeat_actual_var, *self.macros_list)
         self.choose_repeat_kernels_optionmenu = tk.OptionMenu(self.choose_repeat_frame, self.choose_repeat_actual_var, *self.kernels_list)
 
@@ -291,7 +309,7 @@ class App():
         self.choose_repeat_type.grid(row=0, column=1)
         self.choose_repeat_actual.grid(row=0, column=2)
 
-        self.choose_repeat_options = tk.Frame(self.repeat_menu_window) # used for effect options, that's why is it empty
+        self.choose_repeat_options = tk.Frame(self.repeat_menu_window) # used for effect/generator options, that's why is it empty
         self.choose_repeat_options.grid(row=2, column=0)
 
         self.choose_repeat_times_frame = tk.Frame(self.repeat_menu_window)
@@ -741,16 +759,16 @@ class App():
         self.stat_label.grid(row=0, column=0)
         self.stat_ok.grid(row=1, column=0)
         
-    def scroll_effects(self, e):
+    def scroll_effects(self, e=None):
         self.effects_button_canvas.configure(scrollregion=self.effects_button_canvas.bbox("all"), width=self.new_width, height=80)
 
-    def scroll_generators(self, e):
+    def scroll_generators(self, e=None):
         self.generators_button_canvas.configure(scrollregion=self.generators_button_canvas.bbox("all"), width=self.new_width, height=80)
         
-    def scroll_macros(self, e):
+    def scroll_macros(self, e=None):
         self.macros_button_canvas.configure(scrollregion=self.macros_button_canvas.bbox("all"), width=self.new_width, height=80)
         
-    def scroll_kernels(self, e):
+    def scroll_kernels(self, e=None):
         self.kernels_button_canvas.configure(scrollregion=self.kernels_button_canvas.bbox("all"), width=self.new_width, height=80)
         
     def open_image(self):
@@ -903,7 +921,7 @@ class App():
                 
         self.reset_effects_buttons()
 
-        self.effects_clicked_button.configure(text="options", command=self.button_options)
+        self.effects_clicked_button.configure(text="options", command=self.effects_button_options)
 
     def generators_button_onclick(self, number):
         self.generators_clicked_button = self.generators_buttons[number]
@@ -919,7 +937,7 @@ class App():
                 
         self.reset_generators_buttons()
 
-        self.generators_clicked_button.configure(text="options", command=self.button_options)
+        self.generators_clicked_button.configure(text="options", command=self.generators_button_options)
             
     def macros_button_onclick(self, number):
         self.macros_clicked_button = self.macros_buttons[number]
@@ -973,7 +991,7 @@ class App():
         self.apply_options()
         self.options_window.destroy()
         
-    def button_options(self):
+    def effects_button_options(self):
         params = self.clicked_button_val.__code__.co_varnames # gets all the parameters (arguments) that the function wants
         
         self.options_window = tk.Toplevel(self.root)
@@ -1000,6 +1018,35 @@ class App():
         self.options_ok.grid(row=0, column=0)
         self.options_ok_and_close.grid(row=0, column=1)
         self.options_cancel.grid(row=0, column=2)
+
+    def generators_button_options(self):
+        params = self.clicked_button_val.__code__.co_varnames # gets all the parameters (arguments) that the function wants
+        
+        self.options_window = tk.Toplevel(self.root)
+        
+        self.sliders = []
+        self.labels = []
+        for param in params:
+            if not param.startswith("image"):
+                self.sliders.append(tk.Scale(self.options_window, from_=0, to=generators._limit(self.clicked_button_text, param), orient="horizontal"))
+                self.labels.append(tk.Label(self.options_window, text=param))
+                
+        slider_row = 1
+        for slider, label in zip(self.sliders, self.labels):
+            label.grid(row=slider_row - 1, column=0)
+            slider.grid(row=slider_row, column=0)
+            slider_row += 2
+        
+        self.options_button_frame = tk.Frame(self.options_window)
+        self.options_button_frame.grid(row=slider_row + 1, column=0)
+        
+        self.options_ok = tk.Button(self.options_button_frame, text="OK", command=self.apply_options)
+        self.options_ok_and_close = tk.Button(self.options_button_frame, text="OK & Close", command=self.apply_and_close_options)
+        self.options_cancel = tk.Button(self.options_button_frame, text="Cancel", command=self.turn_off_options)
+        self.options_ok.grid(row=0, column=0)
+        self.options_ok_and_close.grid(row=0, column=1)
+        self.options_cancel.grid(row=0, column=2)
+
         
 if __name__ == "__main__":
     App()
