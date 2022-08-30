@@ -21,6 +21,11 @@ def _limit(command, param):
             return 200
         else:
             return 100
+    elif command == "tricorn":
+        if param != "zoom":
+            return 200
+        else:
+            return 100
     elif command == "grayscale_noise":
         return 127
 
@@ -51,6 +56,33 @@ def _run_mandelbrot(w, h, zoom, move_x, move_y):
     
 def mandelbrot(image, zoom=100, move_x=100, move_y=100):
     return _run_mandelbrot(image.width, image.height, zoom / 100, (move_x - 100) / 100, (move_y - 100) / 100)
+    
+def _run_tricorn(w, h, zoom, move_x, move_y):
+    tricorn_image = Image.new("RGB", (w, h), (255, 255, 255))
+    tricorn_pixels = tricorn_image.load()
+    
+    for px in range(w):
+        for py in range(h):
+            x = 1.5 * (px - w / 2) / (0.5 * zoom * w) + move_x
+            y = 1 * (py - h / 2) / (0.5 * zoom * h) + move_y
+            
+            zx = x
+            zy = y
+            
+            i = 0
+            while zx * zx + zy * zy < 4 and i < 255:
+                xtemp = zx * zx - zy * zy + x
+                zy = -2 * zx * zy + y
+                zx = xtemp
+                
+                i += 1
+                
+            tricorn_pixels[px, py] = (i << 21) + (i << 10) + i * 8
+            
+    return tricorn_image
+    
+def tricorn(image, zoom=100, move_x=100, move_y=100):
+    return _run_tricorn(image.width, image.height, zoom / 100, (move_x - 100) / 100, (move_y - 100) / 100)
 
 def _run_julia(w, h, cx, cy, move_x, move_y, zoom):
     julia_image = Image.new("RGB", (w, h), (255, 255, 255))
