@@ -5,7 +5,7 @@ def _limit(command, param):
     if param == "fade":
         return 100
     elif command == "julia":
-        if not param == "zoom":
+        if param != "zoom":
             return 200
         else:
             return 100
@@ -16,14 +16,41 @@ def _limit(command, param):
             return 10
         else:
             return 200
+    elif command == "mandelbrot":
+        if param != "zoom":
+            return 200
+        else:
+            return 100
     elif command == "grayscale_noise":
         return 127
 
 def grayscale_noise(image, sigma=127, fade=100):
     return Image.blend(image, Image.effect_noise(image.size, sigma).convert("RGB"), fade / 100)
+
+def _run_mandelbrot(w, h, zoom, move_x, move_y):
+    mandelbrot_image = Image.new("RGB", (w, h), (255, 255, 255))
+    mandelbrot_pixels = mandelbrot_image.load()
+
+    for px in range(w):
+        for py in range(h):
+            x0 = 1.5 * (px - w / 2) / (0.5 * zoom * w) + move_x
+            y0 = 1 * (py - h / 2) / (0.5 * zoom * h) + move_y
+            x = 0
+            y = 0
+
+            i = 0
+            while x * x + y * y < 4 and i < 255:
+                tmp = x * x - y * y + x0
+                y = 2 * x * y + y0
+                x = tmp
+                i += 1
+
+            mandelbrot_pixels[px, py] = (i << 21) + (i << 10) + i * 8
+
+    return mandelbrot_image
     
-def mandelbrot(image, quality=100):
-    return Image.effect_mandelbrot(image.size, (0, 0, image.width, image.height), quality).convert("RGB")
+def mandelbrot(image, zoom=100, move_x=100, move_y=100):
+    return _run_mandelbrot(image.width, image.height, zoom / 100, (move_x - 100) / 100, (move_y - 100) / 100)
 
 def _run_julia(w, h, cx, cy, move_x, move_y, zoom):
     julia_image = Image.new("RGB", (w, h), (255, 255, 255))
@@ -43,7 +70,7 @@ def _run_julia(w, h, cx, cy, move_x, move_y, zoom):
     
     return julia_image
 
-def julia(image, cx=179, cy=37, move_x=100, move_y=100, zoom=100):
+def julia(image, cx=179, cy=37, zoom=100, move_x=100, move_y=100):
     return _run_julia(image.width, image.height, (cx - 100) / 100, (cy - 100) / 100, (move_x - 100) / 100, (move_y - 100) / 100, zoom / 100)
 
 def _run_multijulia(w, h, cx, cy, n, move_x, move_y, zoom):
@@ -53,7 +80,7 @@ def _run_multijulia(w, h, cx, cy, n, move_x, move_y, zoom):
     for x in range(w):
         for y in range(h):
             zx = 1.5 * (x - w / 2) / (0.5 * zoom * w) + move_x
-            zy = (y - h / 2) / (0.5 * zoom * h) + move_y
+            zy = 1 * (y - h / 2) / (0.5 * zoom * h) + move_y
             i = 0
             while zx * zx + zy * zy < 4 and i < 255:
                 tmp = pow(zx * zx - zy * zy + cx, n / 2) * math.cos(n * math.atan2(zy, zx)) + cx
