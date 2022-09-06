@@ -1,0 +1,3 @@
+gaussian_blur 100 100
+unsharp_mask 100 200 3 100
+equalize 100

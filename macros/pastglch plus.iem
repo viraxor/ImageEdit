@@ -1,0 +1,3 @@
+macro pastel glitch
+effect unsharp_mask 3 150 3 100
+effect unsharp_mask 3 150 3 100
