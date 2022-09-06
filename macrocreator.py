@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox, colorchooser, filedialog
-import effects, kernelcreator
+import effects, generators, kernelcreator
+import glob
 from inspect import getmembers, isfunction
 
 class App():
@@ -8,12 +9,16 @@ class App():
         super().__init__()
         
         self.root = tk.Toplevel(root)
-        self.root.title("ImageEdit Macro Creator v1.1")
+        self.root.title("ImageEdit Macro Creator v1.2")
         
         self.last_effect_listbox = 1
         
         self.effects = getmembers(effects, isfunction)
+        self.generators = getmembers(generators, isfunction)
+        self.macros = [x.split("/")[-1].split("\\")[-1] for x in glob.glob("./macros/*.iem")]
+        self.kernels = [x.split("/")[-1].split("\\")[-1] for x in glob.glob("./kernels/*.iek")]
         self.make_effects_list()
+        self.make_generators_list()
         
         self.effects_listbox = tk.Listbox(self.root)
         self.effects_listbox.grid(row=0, column=0)
@@ -41,8 +46,12 @@ class App():
         for name, value in self.effects:
             if not name.startswith("_"): # __init__, _limit, etc
                 self.effects_list.append(name)
-        self.effects_list.append("macro")
-        self.effects_list.append("kernel") # add macro and kernel stuff to fx list
+
+    def make_generators_list(self):
+        self.generators_list = []
+        for name, value in self.generators:
+            if not name.startswith("_"): # __init__, _limit, etc
+                self.generators_list.append(name)
         
     def open_macro(self):
         self.current_macro_dialog = filedialog.askopenfilename(defaultextension=".iem", filetypes=[("ImageEdit Macro", "*.iem"), ("All Files", "*.*")])
@@ -70,7 +79,9 @@ class App():
                 f.write(write_to_f)
         
     def add_macro_to_listbox(self):
-        insert_str = self.add_macro_variable.get()
+        insert_str = f"{self.add_macro_type_variable.get()} {self.add_macro_variable.get()}"
+        if insert_str.endswith(" "): 
+            insert_str = insert_str[:-1]
         for slider in self.sliders:
             insert_str += f" {slider.get()}"
     
@@ -87,9 +98,12 @@ class App():
         self.add_macro_window.quit()
         
     def sliders_add_macro(self, a, b, c):
-        macro_name = self.add_macro_variable.get()
+        macro_name = self.add_macro_type_variable.get()
         if macro_name not in ["kernel", "macro"]:
-            params = eval(f"effects.{macro_name}.__code__.co_varnames") # gets all the parameters (arguments) that the function wants
+            if macro_name == "effect":
+                params = eval(f"effects.{self.add_macro_variable.get()}.__code__.co_varnames") # gets all the parameters (arguments) that the function wants
+            else:
+                params = eval(f"generators.{self.add_macro_variable.get()}.__code__.co_varnames")
     
             self.slider_frame.grid_forget()
     
@@ -99,7 +113,7 @@ class App():
         
             for param in params:
                 if not param.startswith("image"):
-                    self.sliders.append(tk.Scale(self.slider_frame, from_=0, to=effects._limit(macro_name, param), orient="horizontal"))
+                    self.sliders.append(tk.Scale(self.slider_frame, from_=0, to=eval(f"{macro_name}s._limit")(self.add_macro_variable.get(), param), orient="horizontal"))
                     self.labels.append(tk.Label(self.slider_frame, text=param))
                 
             slider_row = 1
@@ -122,12 +136,29 @@ class App():
 
         self.slider_frame.grid(row=2, column=0)
 
+    def change_menu_type(self, a, b, c):
+        if self.add_macro_type_variable.get() == "effect":
+            self.add_macro_option_menu.grid_forget()
+            self.add_macro_option_menu = self.add_macro_option_menu = tk.OptionMenu(self.add_macro_window, self.add_macro_variable, *self.effects_list)
+            self.add_macro_option_menu.grid(row=1, column=0)
+        elif self.add_macro_type_variable.get() == "generator":
+            self.add_macro_option_menu.grid_forget()
+            self.add_macro_option_menu = self.add_macro_option_menu = tk.OptionMenu(self.add_macro_window, self.add_macro_variable, *self.generators_list)
+            self.add_macro_option_menu.grid(row=1, column=0)
+        self.sliders_add_macro(a, b, c)
+
     def add_macro(self):
         self.add_macro_window = tk.Toplevel()
         
         self.slider_frame = tk.Frame(self.add_macro_window)
         
-        self.add_macro_label = tk.Label(self.add_macro_window, text="Add macro:")
+        self.add_macro_type_frame = tk.Frame(self.add_macro_window)
+        self.add_macro_label = tk.Label(self.add_macro_type_frame, text="Add")
+
+        self.add_macro_type_variable = tk.StringVar()
+        self.add_macro_type_option_menu = tk.OptionMenu(self.add_macro_type_frame, self.add_macro_type_variable, *["effect", "generator", "macro", "kernel"])
+
+        self.add_macro_type_variable.trace("w", self.change_menu_type)
         
         self.add_macro_variable = tk.StringVar()
         self.add_macro_option_menu = tk.OptionMenu(self.add_macro_window, self.add_macro_variable, *self.effects_list)
@@ -140,7 +171,9 @@ class App():
         self.add_macro_cancel = tk.Button(self.add_macro_buttons, text="Cancel", command=self.exit_add_macro)
         
         self.add_macro_label.grid(row=0, column=0)
-        self.add_macro_option_menu.grid(row=1, column=0)
+        self.add_macro_type_option_menu.grid(row=0, column=1)
+
+        self.add_macro_type_frame.grid(row=0, column=0)
         
         self.add_macro_ok.grid(row=0, column=0)
         self.add_macro_cancel.grid(row=0, column=1)
@@ -165,10 +198,22 @@ def do_macro(image, filename):
                 image = do_macro(image, instr[6:].strip("\n"))
             elif instr.startswith("kernel"):
                 image = kernelcreator.do_kernel(image, instr[7:].strip("\n"))
+            elif instr.startswith("generator"):
+                image_perform = f"generators.{instr.split(' ')[1]}"
+                image_perform_args = [int(x) for x in instr.split(" ")[2:]]
+                image = eval(f"generators.{instr.split(' ')[1]}")(image, *image_perform_args)
+            elif instr.startswith("effect"):
+                image_perform = f"effects.{instr.split(' ')[1]}"
+                image_perform_args = [int(x) for x in instr.split(" ")[2:]]
+                image = eval(f"effects.{instr.split(' ')[1]}")(image, *image_perform_args)
             else:
                 image_perform = f"effects.{instr.split(' ')[0]}"
                 image_perform_args = [int(x) for x in instr.split(" ")[1:]]
                 image = eval(f"effects.{instr.split(' ')[0]}")(image, *image_perform_args)
         else:
-            image = eval(f"effects.{instr}")(image)
+            try:
+                image = eval(f"effects.{instr}")(image)
+            except:
+                image = eval(f"generators.{instr}")(image)
+
     return image
