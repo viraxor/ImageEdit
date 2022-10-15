@@ -1,0 +1,3 @@
+effect gaussian_blur 3 100
+kernel gfg 2
+effect gaussian_blur 1 100
