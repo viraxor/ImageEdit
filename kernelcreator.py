@@ -7,7 +7,7 @@ class App():
         super().__init__()
     
         self.root = tk.Toplevel(root)
-        self.root.title("ImageEdit Kernel Creator v1.0")
+        self.root.title("ImageEdit Kernel Creator v1.1")
         
         self.menubar = tk.Menu(self.root)
         
@@ -48,7 +48,7 @@ class App():
         self.open_kernel_dialog = filedialog.askopenfilename(defaultextension=".iek", filetypes=(("ImageEdit Kernel", "*.iek"), ("All Files", "*.*")))
         if self.open_kernel_dialog:
             try:
-                f = open(self.current_macro_dialog, "r")
+                f = open(self.open_kernel_dialog, "r")
             except FileNotFoundError:
                 messagebox.showerror(title="Error", message="File not found.")
             else:
