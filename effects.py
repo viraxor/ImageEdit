@@ -92,3 +92,31 @@ def channel_drop(image, red=100, green=100, blue=100, fade=100):
     return Image.blend(image, image.convert("RGB", (red / 100, 0, 0, 0, 
         0, green / 100, 0, 0, 
         0, 0, blue / 100, 0)), fade / 100)
+        
+def _run_sepia(image):
+    #Thank you TroJanzHEX for this command!
+    
+    width, height = image.size
+    image_pixels = image.load()
+    
+    for x in range(width):
+        for y in range(height):
+            red, green, blue = image_pixels[x, y]
+            new_val = 0.3 * red + 0.59 * green + 0.11 * blue
+            
+            new_red = int(new_val * 2)
+            if new_red > 255:
+                new_red = 255
+            new_green = int(new_val * 1.5)
+            if new_green > 255:
+                new_green = 255
+            new_blue = int(new_val)
+            if new_blue > 255:
+                new_blue = 255
+
+            image_pixels[x, y] = (new_red, new_green, new_blue)
+
+    return image
+    
+def sepia(image, fade=100):
+    return Image.blend(image, _run_sepia(image), fade / 100)
