@@ -95,7 +95,7 @@ def channel_drop(image, red=100, green=100, blue=100, fade=100):
         
 def _run_sepia(image):
     #Thank you TroJanzHEX for this command!
-    
+
     width, height = image.size
     image_pixels = image.load()
     
@@ -120,3 +120,29 @@ def _run_sepia(image):
     
 def sepia(image, fade=100):
     return Image.blend(image, _run_sepia(image), fade / 100)
+    
+def _run_tritone(image):
+    image = ImageOps.grayscale(image).convert("RGB")
+    
+    width, height = image.size
+    image_pixels = image.load()
+    
+    shadow_color = (255, 0, 0)
+    mid_color = (255, 128, 128)
+    high_color = (255, 255, 255)
+    
+    for x in range(width):
+        for y in range(height):
+            red, green, blue = image_pixels[x, y]
+            
+            if green <= 64 or blue <= 64:
+                image_pixels[x, y] = shadow_color
+            elif (green >= 64 and green <= 128) or (blue >= 64 and blue <= 128):
+                image_pixels[x, y] = mid_color
+            else:
+                image_pixels[x, y] = high_color
+                
+    return image
+    
+def tritone(image, fade=100):
+    return Image.blend(image, _run_tritone(image), fade / 100)
