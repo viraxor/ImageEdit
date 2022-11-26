@@ -457,6 +457,9 @@ class App():
         self.settings_window.destroy()
         self.settings_window.quit()
         
+        self.resize_image()
+        self.render_image()
+        
     def turn_off_settings(self):
         self.settings_window.destroy()
         self.settings_window.quit()
@@ -763,10 +766,8 @@ class App():
         self.original_height = self.current_image.height
         
         self.modify_percent = 1 # value * 1 does nothing. it is faster than checking if this value is False and blah blah blah
-        if self.original_width > self.resize_image_max_width:
-            self.modify_percent = self.original_width / self.resize_image_max_width # how much times is original larger than
-        elif self.original_height > self.resize_image_max_height:
-            self.modify_percent = self.original_height / self.resize_image_max_height
+        if self.original_height > self.resize_image_max_height or self.original_width > self.resize_image_max_width:
+            self.modify_percent = self.original_width / self.resize_image_max_width if self.original_width / self.resize_image_max_width > self.original_height / self.resize_image_max_height else self.original_height / self.resize_image_max_height
         elif self.original_width < self.resize_image_min_width:
             self.modify_percent = self.original_width / self.resize_image_min_width
         elif self.original_height < self.resize_image_min_height:
