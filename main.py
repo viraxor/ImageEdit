@@ -796,6 +796,10 @@ class App():
         i = 0
         for name, value in self.effects: # don't do effects_list here, because no value
             if not name.startswith("_"):
+                if len(name) > 12:
+                    new_name = name.replace("_", "\n")
+                else:
+                    new_name = name
                 self.effects_buttons.append(tk.Button(self.effects_button_frame, text=new_name, command=lambda c=i: self.effects_button_onclick(c), width=10, height=5))
                 i += 1
                 
@@ -810,6 +814,10 @@ class App():
         i = 0
         for name, value in self.generators: # don't do generators_list here, because no value
             if not name.startswith("_"):
+                if len(name) > 12:
+                    new_name = name.replace("_", "\n")
+                else:
+                    new_name = name
                 self.generators_buttons.append(tk.Button(self.generators_button_frame, text=new_name, command=lambda c=i: self.generators_button_onclick(c), width=10, height=5))
                 i += 1
                 
@@ -856,6 +864,10 @@ class App():
         i = 0
         for name, value in self.effects:
             if not name.startswith("_"): # __init__, _limit, etc
+                if len(name) > 12:
+                    new_name = name.replace("_", "\n")
+                else:
+                    new_name = name
                 self.effects_buttons[i].configure(text=new_name, command=lambda c=i: self.effects_button_onclick(c))
                 i += 1
 
@@ -863,6 +875,10 @@ class App():
         i = 0
         for name, value in self.generators:
             if not name.startswith("_"): # __init__, _limit, etc
+                if len(name) > 12:
+                    new_name = name.replace("_", "\n")
+                else:
+                    new_name = name
                 self.generators_buttons[i].configure(text=new_name, command=lambda c=i: self.generators_button_onclick(c))
                 i += 1
             
