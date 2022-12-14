@@ -12,7 +12,7 @@ class App():
         
         self.max_image_pixels_number = Image.MAX_IMAGE_PIXELS
 
-        self.version = "v1.2.3"
+        self.version = "v1.2.4"
         
         self.root = tk.Tk()
         self.root.title(f"ImageEdit {self.version}")
