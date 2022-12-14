@@ -817,7 +817,7 @@ class App():
                 if len(name) > 12:
                     new_name = name.replace("_", "\n")
                 else:
-                    new_name = name
+                    new_name = name.replace("_", " ")
                 self.generators_buttons.append(tk.Button(self.generators_button_frame, text=new_name, command=lambda c=i: self.generators_button_onclick(c), width=10, height=5))
                 i += 1
                 
@@ -834,7 +834,7 @@ class App():
             if len(name) > 12:
                 new_name = name.replace(" ", "\n")
             else:
-                new_name = name
+                new_name = name.replace("_", " ")
             self.macros_buttons.append(tk.Button(self.macros_button_frame, text=new_name, command=lambda c=i: self.macros_button_onclick(c), width=10, height=5))
             i += 1
                 
@@ -867,7 +867,7 @@ class App():
                 if len(name) > 12:
                     new_name = name.replace("_", "\n")
                 else:
-                    new_name = name
+                    new_name = name.replace("_", " ")
                 self.effects_buttons[i].configure(text=new_name, command=lambda c=i: self.effects_button_onclick(c))
                 i += 1
 
@@ -878,14 +878,14 @@ class App():
                 if len(name) > 12:
                     new_name = name.replace("_", "\n")
                 else:
-                    new_name = name
+                    new_name = name.replace("_", " ")
                 self.generators_buttons[i].configure(text=new_name, command=lambda c=i: self.generators_button_onclick(c))
                 i += 1
             
     def effects_button_onclick(self, number):
         self.effects_clicked_button = self.effects_buttons[number]
                 
-        self.clicked_button_text = self.effects_clicked_button["text"]
+        self.clicked_button_text = self.effects_clicked_button["text"].replace("\n", "_").replace(" ", "_")
         self.clicked_button_val = eval(f"effects.{self.clicked_button_text}")
         
         self.last_image = self.current_image
@@ -901,7 +901,7 @@ class App():
     def generators_button_onclick(self, number):
         self.generators_clicked_button = self.generators_buttons[number]
                 
-        self.clicked_button_text = self.generators_clicked_button["text"]
+        self.clicked_button_text = self.generators_clicked_button["text"].replace("\n", "_").replace(" ", "_")
         self.clicked_button_val = eval(f"generators.{self.clicked_button_text}")
         
         self.last_image = self.current_image
@@ -927,7 +927,7 @@ class App():
 
         self.macro_wait_window.update() # if you do lots of macros, this could potentially cause issues (?)
 
-        self.current_image = macrocreator.do_macro(self.current_image, self.macros_clicked_button["text"])
+        self.current_image = macrocreator.do_macro(self.current_image, self.macros_clicked_button["text"].replace("\n", " "))
         
         self.resize_image()
         self.render_image()
@@ -938,7 +938,7 @@ class App():
         self.kernels_clicked_button = self.kernels_buttons[number]
         
         self.last_image = self.current_image
-        self.current_image = kernelcreator.do_kernel(self.current_image, self.kernels_clicked_button["text"])
+        self.current_image = kernelcreator.do_kernel(self.current_image, self.kernels_clicked_button["text"].replace("\n", " "))
         
         self.resize_image()
         self.render_image()
