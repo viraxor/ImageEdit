@@ -419,6 +419,11 @@ class App():
         self.show_full_image_path_checkbutton = tk.Checkbutton(self.show_full_image_path_frame, onvalue=1, offvalue=0, variable=self.show_full_image_path_var)
         self.show_full_image_path_label = tk.Label(self.show_full_image_path_frame, text="Show full image path")
         
+        self.default_image_extension_frame = tk.Frame(self.other_tab_frame)
+        self.default_image_extension_entry = tk.Entry(self.default_image_extension_frame)
+        self.default_image_extension_entry.insert(0, f"{self.default_image_extension}")
+        self.default_image_extension_label = tk.Label(self.default_image_extension_frame, text=f"Default image extension: ")
+        
         self.show_full_image_path_checkbutton.grid(row=0, column=0)
         self.show_full_image_path_label.grid(row=0, column=1)
         
@@ -450,9 +455,10 @@ class App():
         except:
             messagebox.showerror(title="Settings error", message="You entered the value for Image.MAX_IMAGE_PIXELS incorrectly.")
         self.show_full_image_path = self.show_full_image_path_var.get()
+        self.default_image_extension = self.default_image_extension_entry.get()
             
         with open("./settings.txt", "w") as f:
-            f.write(f"{self.resize_image_max_width}\n{self.resize_image_max_height}\n{self.resize_image_min_width}\n{self.resize_image_min_height}\n{self.max_image_pixels_number}\n{self.show_full_image_path}")
+            f.write(f"{self.resize_image_max_width}\n{self.resize_image_max_height}\n{self.resize_image_min_width}\n{self.resize_image_min_height}\n{self.max_image_pixels_number}\n{self.show_full_image_path}\n{self.default_image_extension}")
             
         self.settings_window.destroy()
         self.settings_window.quit()
@@ -504,13 +510,14 @@ class App():
                 self.settings_list = f.readlines()
         except:
             with open("./settings.txt", "w") as f:
-                f.write("800\n800\n200\n200\n80000000\n0")
+                f.write("800\n800\n200\n200\n80000000\n0\n.png")
             self.resize_image_max_width = 800
             self.resize_image_max_height = 800
             self.resize_image_min_width = 200
             self.resize_image_min_height = 200
             self.max_image_pixels_number = Image.MAX_IMAGE_PIXELS = 80000000
             self.show_full_image_path = False
+            self.default_image_extension = ".png"
         else:
             try:
                 self.resize_image_max_width = int(self.settings_list[0])
@@ -542,6 +549,11 @@ class App():
             except:
                 self.show_full_image_path = False
                 messagebox.showwarning(title="Settings error", message="There's an error with show_full_image_path setting. The default value, False, will be used.")
+            try:
+                self.default_image_extension = self.settings_list[6].replace("\n", "")
+            except:
+                self.default_image_extension = ".png"
+                messagebox.showwarning(title="Settings error", message="There's an error with default_image_extension setting. The default value, .png, will be used.")
             
     def undo(self):
         image = self.current_image
@@ -756,7 +768,10 @@ class App():
     def save_image(self):
         self.save_image_dialog = filedialog.asksaveasfilename()
         if self.save_image_dialog:
-            self.current_image.save(self.save_image_dialog)
+            if not "." in self.save_image_dialog:
+                self.current_image.save(self.save_image_dialog + self.default_image_extension)
+            else:
+                self.current_image.save(self.save_image_dialog)
         
     def render_image(self):
         self.image_label.config(image=self.show_image)
