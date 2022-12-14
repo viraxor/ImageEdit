@@ -796,7 +796,7 @@ class App():
         i = 0
         for name, value in self.effects: # don't do effects_list here, because no value
             if not name.startswith("_"):
-                self.effects_buttons.append(tk.Button(self.effects_button_frame, text=name, command=lambda c=i: self.effects_button_onclick(c), width=10, height=5))
+                self.effects_buttons.append(tk.Button(self.effects_button_frame, text=new_name, command=lambda c=i: self.effects_button_onclick(c), width=10, height=5))
                 i += 1
                 
         button_column = 0
@@ -810,7 +810,7 @@ class App():
         i = 0
         for name, value in self.generators: # don't do generators_list here, because no value
             if not name.startswith("_"):
-                self.generators_buttons.append(tk.Button(self.generators_button_frame, text=name, command=lambda c=i: self.generators_button_onclick(c), width=10, height=5))
+                self.generators_buttons.append(tk.Button(self.generators_button_frame, text=new_name, command=lambda c=i: self.generators_button_onclick(c), width=10, height=5))
                 i += 1
                 
         button_column = 0
@@ -823,7 +823,11 @@ class App():
 
         i = 0
         for name in self.macros_list:
-            self.macros_buttons.append(tk.Button(self.macros_button_frame, text=name, command=lambda c=i: self.macros_button_onclick(c), width=10, height=5))
+            if len(name) > 12:
+                new_name = name.replace(" ", "\n")
+            else:
+                new_name = name
+            self.macros_buttons.append(tk.Button(self.macros_button_frame, text=new_name, command=lambda c=i: self.macros_button_onclick(c), width=10, height=5))
             i += 1
                 
         button_column = 0
@@ -836,7 +840,11 @@ class App():
 
         i = 0
         for name in self.kernels_list:
-            self.kernels_buttons.append(tk.Button(self.kernels_button_frame, text=name, command=lambda c=i: self.kernels_button_onclick(c), width=10, height=5))
+            if len(name) > 12:
+                new_name = name.replace(" ", "\n")
+            else:
+                new_name = name
+            self.kernels_buttons.append(tk.Button(self.kernels_button_frame, text=new_name, command=lambda c=i: self.kernels_button_onclick(c), width=10, height=5))
             i += 1
                 
         button_column = 0
@@ -848,14 +856,14 @@ class App():
         i = 0
         for name, value in self.effects:
             if not name.startswith("_"): # __init__, _limit, etc
-                self.effects_buttons[i].configure(text=name, command=lambda c=i: self.effects_button_onclick(c))
+                self.effects_buttons[i].configure(text=new_name, command=lambda c=i: self.effects_button_onclick(c))
                 i += 1
 
     def reset_generators_buttons(self):
         i = 0
         for name, value in self.generators:
             if not name.startswith("_"): # __init__, _limit, etc
-                self.generators_buttons[i].configure(text=name, command=lambda c=i: self.generators_button_onclick(c))
+                self.generators_buttons[i].configure(text=new_name, command=lambda c=i: self.generators_button_onclick(c))
                 i += 1
             
     def effects_button_onclick(self, number):
