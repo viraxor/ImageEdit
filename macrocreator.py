@@ -9,7 +9,7 @@ class App():
         super().__init__()
         
         self.root = tk.Toplevel(root)
-        self.root.title("ImageEdit Macro Creator v1.2")
+        self.root.title("ImageEdit Macro Creator v1.2.1")
         
         self.last_effect_listbox = 1
         
@@ -64,8 +64,12 @@ class App():
                 self.macro_instructions = f.readlines()
                 f.close()
                 
+                self.macro_instructions = [i.replace('\n', '') for i in self.macro_instructions]
+                
+                self.effects_listbox.delete(0, tk.END)
+                
                 self.last_effect_listbox = len(self.macro_instructions)
-                self.effects_listbox.insert(*self.macro_instructions)
+                self.effects_listbox.insert(0, *self.macro_instructions)
     
     def save_macro(self):
         self.save_macro_dialog = filedialog.asksaveasfilename(defaultextension=".iem", filetypes=[("ImageEdit Macro", "*.iem"), ("All Files", "*.*")])
