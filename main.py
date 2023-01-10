@@ -37,7 +37,6 @@ class App():
         self.edit_menu.add_command(label="Resize", command=self.resize_menu)
         self.edit_menu.add_command(label="Crop", command=self.crop_menu)
         self.edit_menu.add_command(label="Tile", command=self.tile_menu)
-        self.edit_menu.add_command(label="Repeat", command=self.repeat_menu)
         self.edit_menu.add_separator()
         self.edit_menu.add_command(label="Settings", command=self.settings_menu)
 
@@ -167,6 +166,9 @@ class App():
         self.button_notebook.grid(row=1, column=0)
 
         self.button_notebook.bind("<<NotebookTabChanged>>", self.reset_all_buttons)
+
+        if self.autosave_seconds != 0:
+            self.root.after(self.autosave_seconds * 1000, self.autosave)
         
         self.root.mainloop()
 
@@ -416,6 +418,7 @@ class App():
         
         self.show_full_image_path_frame = tk.Frame(self.other_tab_frame)
         self.show_full_image_path_var = tk.IntVar()
+        self.show_full_image_path_var.set(self.show_full_image_path)
         self.show_full_image_path_checkbutton = tk.Checkbutton(self.show_full_image_path_frame, onvalue=1, offvalue=0, variable=self.show_full_image_path_var)
         self.show_full_image_path_label = tk.Label(self.show_full_image_path_frame, text="Show full image path")
         
@@ -423,11 +426,24 @@ class App():
         self.default_image_extension_entry = tk.Entry(self.default_image_extension_frame)
         self.default_image_extension_entry.insert(0, f"{self.default_image_extension}")
         self.default_image_extension_label = tk.Label(self.default_image_extension_frame, text=f"Default image extension: ")
+
+        self.autosave_seconds_frame = tk.Frame(self.other_tab_frame)
+        self.autosave_seconds_entry = tk.Entry(self.autosave_seconds_frame)
+        self.autosave_seconds_entry.insert(0, f"{self.autosave_seconds}")
+        self.autosave_seconds_label = tk.Label(self.autosave_seconds_frame, text=f"Autosave seconds (set 0 to turn off): ")
         
         self.show_full_image_path_checkbutton.grid(row=0, column=0)
         self.show_full_image_path_label.grid(row=0, column=1)
+
+        self.default_image_extension_entry.grid(row=0, column=1)
+        self.default_image_extension_label.grid(row=0, column=0)
+
+        self.autosave_seconds_entry.grid(row=0, column=1)
+        self.autosave_seconds_label.grid(row=0, column=0)
         
         self.show_full_image_path_frame.grid(row=0, column=0)
+        self.default_image_extension_frame.grid(row=1, column=0)
+        self.autosave_seconds_frame.grid(row=2, column=0)
         
         self.other_tab_frame.grid(row=0, column=1)
         
@@ -454,11 +470,22 @@ class App():
             self.max_image_pixels_number = Image.MAX_IMAGE_PIXELS = int(self.max_image_pixels_number_entry.get())
         except:
             messagebox.showerror(title="Settings error", message="You entered the value for Image.MAX_IMAGE_PIXELS incorrectly.")
+        try:
+            self.autosave_seconds = int(self.autosave_seconds_entry.get())
+        except:
+            messagebox.showerror(title="Settings error", message="You entered the value for autosave_seconds incorrectly.")
         self.show_full_image_path = self.show_full_image_path_var.get()
         self.default_image_extension = self.default_image_extension_entry.get()
             
         with open("./settings.txt", "w") as f:
-            f.write(f"{self.resize_image_max_width}\n{self.resize_image_max_height}\n{self.resize_image_min_width}\n{self.resize_image_min_height}\n{self.max_image_pixels_number}\n{self.show_full_image_path}\n{self.default_image_extension}")
+            f.write(f"""{self.resize_image_max_width}
+{self.resize_image_max_height}
+{self.resize_image_min_width}
+{self.resize_image_min_height}
+{self.max_image_pixels_number}
+{self.show_full_image_path}
+{self.default_image_extension}
+{self.autosave_seconds}""")
             
         self.settings_window.destroy()
         self.settings_window.quit()
@@ -518,6 +545,7 @@ class App():
             self.max_image_pixels_number = Image.MAX_IMAGE_PIXELS = 80000000
             self.show_full_image_path = False
             self.default_image_extension = ".png"
+            self.autosave_seconds = 300
         else:
             try:
                 self.resize_image_max_width = int(self.settings_list[0])
@@ -554,6 +582,11 @@ class App():
             except:
                 self.default_image_extension = ".png"
                 messagebox.showwarning(title="Settings error", message="There's an error with default_image_extension setting. The default value, .png, will be used.")
+            try:
+                self.autosave_seconds = int(self.settings_list[7])
+            except:
+                self.autosave_seconds = 300
+                messagebox.showwarning(title="Settings error", message="There's an error with default_image_extension setting. The default value, 300, will be used.")
             
     def undo(self):
         image = self.current_image
@@ -1037,6 +1070,10 @@ class App():
         self.options_ok_and_close.grid(row=0, column=1)
         self.options_cancel.grid(row=0, column=2)
 
+    def autosave(self):
+        print("autosaving")
+        self.current_image.save(f"./autosaves/autosave{self.default_image_extension}")
+        self.root.after(self.autosave_seconds * 1000, self.autosave)
         
 if __name__ == "__main__":
     App()
