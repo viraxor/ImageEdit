@@ -77,7 +77,8 @@ class App():
             with open(self.save_macro_dialog, "w") as f:
                 write_to_f = ""
                 for i in range(self.last_effect_listbox):
-                    write_to_f += f"{self.effects_listbox.get(i)}\n"
+                    if self.effects_listbox.get(i).replace(" ", "") != "":
+                        write_to_f += f"{self.effects_listbox.get(i)}\n"
                 write_to_f = write_to_f[:-1]
                 
                 f.write(write_to_f)
