@@ -1,0 +1,4 @@
+kernel emboss
+effect gaussian_blur 3 100
+kernel emboss
+effect gaussian_blur 3 100
