@@ -142,29 +142,3 @@ def _run_multijulia(w, h, cx, cy, n, move_x, move_y, zoom):
 
 def multijulia(image, cx=179, cy=37, n=4, move_x=100, move_y=100, zoom=100):
     return _run_multijulia(image.width, image.height, (cx - 100) / 100, (cy - 100) / 100, n, (move_x - 100) / 100, (move_y - 100) / 100, zoom / 100)
-
-def _run_x_plus_y(w, h):
-    x_plus_y_image = Image.new("RGB", (w, h))
-    x_plus_y_pixels = x_plus_y_image.load()
-    
-    for x in range(w):
-        for y in range(h):
-            x_plus_y_pixels[x, y] = (x+y) % 255
-            
-    return x_plus_y_image 
-
-def x_plus_y(image):
-    return _run_x_plus_y(image.width, image.height)
-    
-def _run_x_times_y(w, h):
-    x_times_y_image = Image.new("RGB", (w, h))
-    x_times_y_pixels = x_times_y_image.load()
-    
-    for x in range(w):
-        for y in range(h):
-            x_times_y_pixels[x, y] = (x*y) % 255
-            
-    return x_times_y_image 
-
-def x_times_y(image):
-    return _run_x_times_y(image.width, image.height)
